@@ -138,6 +138,25 @@ begin = """
   background-color: #CCCCFF;
 }
 
+.tab input[type=text]{
+  float: right;
+  padding: 6px;
+  border: 2px solid #DDDDFF;
+  margin-top: 8px;
+  margin-right: 16px;
+  font-size: 17px;
+}
+
+.tab select{
+  float: right;
+  padding: 6px;
+  border: 2px solid #DDDDFF;
+  background-color: #F7F7F7;
+  margin-top: 8px;
+  margin-right: 16px;
+  font-size: 17px;
+}
+
 /* Style the tab content */
 .tabcontent {
   display: none;
@@ -185,7 +204,9 @@ div.gallery img {
 }
 </style>
 </head>
-<body>
+<body onload="hideEmptySelects(); document.getElementById('level-select').options[0].selected = 'selected';
+              document.getElementById('time-select').options[0].selected = 'selected';
+              document.getElementById('gallery-filter').value = '';">
 
 <h3>Plot Gallery</h3>
 
@@ -193,6 +214,9 @@ div.gallery img {
   <button class="tablinks active" onclick="openTab(event, 'Top-View')">Top Views</button>
   <button class="tablinks" onclick="openTab(event, 'Side-View')">Side Views</button>
   <button class="tablinks" onclick="openTab(event, 'Linear-View')">Linear Views</button>
+  <input type="text" placeholder="Search..." id="gallery-filter" oninput="filterContent()"></input>
+  <select name="levels" id="level-select" onchange="changeImages()"></select>
+  <select name="times" id="time-select" onchange="changeImages()"></select>
 </div>
 """
 
@@ -200,6 +224,19 @@ plots = {"Top": [], "Side": [], "Linear": []}
 
 end = """
 <script>
+files = [];
+
+function hideEmptySelects(){
+    levels = document.getElementById("level-select");
+    times = document.getElementById("time-select");
+    selects = [levels, times];
+    for(var select of selects){
+        if(select && select.children.length == 0){
+            select.style.display = "none";
+        }
+    }
+}
+
 function openTab(evt, tabName) {
   close = evt.currentTarget.className.includes("active")
 
@@ -218,6 +255,56 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
   }
 }
+
+function imageExists(image_url){
+    return files.includes(image_url.split("/").pop());
+}
+
+function changeImages(){
+    var value = document.getElementById("level-select").value;
+    var vtime = document.getElementById("time-select").value
+                .replaceAll(" ", "_").replaceAll(":", "_").replaceAll("-", "_");
+    var selected = document.getElementById("time-select").options[document.getElementById("time-select").selectedIndex]
+    var itime = selected.parentNode.label.replaceAll(" ", "_").replaceAll(":", "_").replaceAll("-", "_");
+
+    hrefs = document.getElementsByName("gallery-href");
+    images = document.getElementsByName("gallery-image");
+    for(var i = 0; i < images.length; i++){
+        var image = images[i];
+        var tmpLevel = value;
+        var new_location = image.src.replace(image.src.split("-").pop(), `${tmpLevel}it${itime}vt${vtime}.png`);
+        if(!imageExists(new_location)){
+            tmpLevel = image.src.split("-").pop().split("it")[0];
+            new_location = image.src.replace(image.src.split("-").pop(), `${tmpLevel}it${itime}vt${vtime}.png`)
+        }
+        exists = imageExists(new_location);
+        if(exists){
+            image.src = new_location;
+        }
+        if(hrefs.length == images.length && exists){
+            var link = hrefs[i];
+            var level = link.href.split("-").pop();
+            link.href = link.href.replace(level, `${tmpLevel}it${itime}vt${vtime}` +
+            (level.includes(".md") ? ".md" : ".html"));
+        }
+    }
+}
+
+function filterContent(){
+    input = document.getElementById("gallery-filter").value;
+    elements = document.getElementsByClassName("gallery");
+    for(var i = 0; i < elements.length; i++){
+        for(var j = 0; j < elements[i].childNodes.length; j++){
+            if(elements[i].childNodes[j].className == "gtooltip"){
+                if(!elements[i].childNodes[j].firstChild.nodeValue.toLowerCase().includes(input.toLowerCase())){
+                    elements[i].style.display = "none";
+                } else {
+                    elements[i].style.display = "block";
+                }
+            }
+        }
+    }
+}
 </script>
 </body>
 </html>
@@ -229,9 +316,11 @@ def image_md(image_location, caption="", link=None, tooltip=""):
     Returns the html code for the individual plot
     """
     image = f"""
-    <a href="{link}">
-     <img src="{image_location}" alt="{tooltip}" style="width:100%"/>
-    </a>""" if link else f"""<img src="{image_location}" style="width: 100 % "/>"""
+    <a href="{link}" name="gallery-href">
+     <img src="{image_location}" name="gallery-image" alt="{tooltip}"
+     style="width:100%" id="{"".join(image_location.split("-")[:-1])}"/>
+    </a>""" if link else f"""<img src="{image_location}" name="gallery-image" style="width: 100 % "
+    id="{"".join(image_location.split("-")[:-1])}"/>"""
     return f"""<div class="gallery">
                  {image}
                  <div class="gtooltip">
@@ -397,10 +486,11 @@ def write_plot_details(plot_object, l_type="top", sphinx=False, image_path="", c
         os.mkdir(os.path.join(location, "code"))
 
     if sphinx:
-        write_plot_details_sphinx(plot_object, l_type, layer, dataset)
+        write_plot_details_sphinx(plot_object, l_type, layer, code_path, dataset,
+                                  image_path.split("-")[-1].split(".png")[0])
         return
 
-    with open(os.path.join(location, "code", f"{l_type}_{dataset}{plot_object.name}.md"), "w+") as md:
+    with open(os.path.join(location, "code", code_path.split('/')[-1]), "w+") as md:
         md.write(f"![]({image_path})\n\n")
         source, instructions, instructions_native = source_and_import(plot_object, l_type, layer, dataset)
         if instructions:
@@ -422,17 +512,17 @@ def write_plot_details(plot_object, l_type="top", sphinx=False, image_path="", c
                          "\n```\n</details>")
 
 
-def write_plot_details_sphinx(plot_object, l_type, layer, dataset=""):
+def write_plot_details_sphinx(plot_object, l_type, layer, code_path="", dataset="", image_details=None):
     """
     Write .rst files with plot code example for the sphinx docs
     """
     if not os.path.exists(os.path.join(DOCS_LOCATION, "code", "downloads")):
         os.mkdir(os.path.join(DOCS_LOCATION, "code", "downloads"))
 
-    with open(os.path.join(DOCS_LOCATION, "code", f"{l_type}_{dataset}{plot_object.name}.rst"), "w+") as md:
+    with open(os.path.join(DOCS_LOCATION, "code", code_path.split('/')[-1].replace("html", "rst")), "w+") as md:
         source, instructions, instructions_native = source_and_import(plot_object, l_type, layer, dataset)
         md.write(f"{l_type}_{plot_object.name}\n" + "-" * len(f"{l_type}_{plot_object.name}") + "\n")
-        md.write(f".. image:: ../plots/{l_type}_{dataset}{plot_object.name}.png\n\n")
+        md.write(f".. image:: ../plots/{l_type}_{dataset}{plot_object.name}-{image_details}.png\n\n")
         md.write(f"""**How to use this plot**
 
 Make sure you have the required datafields ({', '.join(f'`{field[1]}`'for field in plot_object.required_datafields)})
@@ -491,10 +581,12 @@ def create_linear_plot(xml, file_location):
     plt.close(fig)
 
 
-def add_image(plot, plot_object, generate_code=False, sphinx=False, url_prefix="", dataset=None):
+def add_image(plot, plot_object, generate_code=False, sphinx=False, url_prefix="", dataset=None, level=None, itime=None,
+              vtime=None, simple_naming=False):
     """
     Adds the images to the plots folder and generates the html codes to display them
     """
+    global end
     # Import here due to some circular import issue if imported too soon
     from mslib.index import SCRIPT_NAME
 
@@ -504,26 +596,50 @@ def add_image(plot, plot_object, generate_code=False, sphinx=False, url_prefix="
     l_type = "Linear" if isinstance(plot_object, AbstractLinearSectionStyle) else \
         "Side" if isinstance(plot_object, AbstractVerticalSectionStyle) else "Top"
 
+    filename = f"{l_type}_{dataset}{plot_object.name}-" + (f"{level}it{itime}vt{vtime}".replace(" ", "_")
+                                                           .replace(":", "_").replace("-", "_") if not simple_naming
+                                                           else "")
+
     if plot:
         location = DOCS_LOCATION if sphinx else STATIC_LOCATION
         if not os.path.exists(os.path.join(location, "plots")):
             os.mkdir(os.path.join(location, "plots"))
         if l_type == "Linear":
-            create_linear_plot(etree.fromstring(plot), os.path.join(location, "plots", l_type + "_" + dataset +
-                                                                    plot_object.name + ".png"))
+            create_linear_plot(etree.fromstring(plot), os.path.join(location, "plots", filename + ".png"))
         else:
             with Image.open(io.BytesIO(plot)) as image:
-                image.save(os.path.join(location, "plots", l_type + "_" + dataset + plot_object.name + ".png"),
+                image.save(os.path.join(location, "plots", filename + ".png"),
                            format="PNG")
 
-    img_path = f"../_images/{l_type}_{dataset}{plot_object.name}.png" if sphinx \
-        else f"{url_prefix}/static/plots/{l_type}_{dataset}{plot_object.name}.png"
-    code_path = f"code/{l_type}_{dataset}{plot_object.name}.html" if sphinx \
-        else f"{url_prefix if url_prefix else ''}{SCRIPT_NAME}mss/code/{l_type}_{dataset}{plot_object.name}.md"
+    end = end.replace("files = [", f"files = [\"{filename}.png\",")\
+        .replace(",];", "];")
+    img_path = f"../_images/{filename}.png" if sphinx \
+        else f"{url_prefix}/static/plots/{filename}.png"
+    code_path = f"code/{filename}.html" if sphinx \
+        else f"{url_prefix if url_prefix else ''}{SCRIPT_NAME}mss/code/{filename}.md"
 
     if generate_code:
         write_plot_details(plot_object, l_type, sphinx, img_path, code_path, dataset)
 
-    plots[l_type].append(image_md(img_path, plot_object.name, code_path if generate_code else None,
-                                  f"{plot_object.title}" + (f"<br>{plot_object.abstract}"
-                                                            if plot_object.abstract else "")))
+    id = img_path.split(f"-{level}")[0]
+    if not any([id in html for html in plots[l_type]]):
+        plots[l_type].append(image_md(img_path, plot_object.name, code_path if generate_code else None,
+                                      f"{plot_object.title}" + (f"<br>{plot_object.abstract}"
+                                                                if plot_object.abstract else "")))
+
+
+def add_levels(levels):
+    global begin
+    level_select = begin.split("name=\"levels\"")[-1].split("</select>")[0]
+    begin = begin.replace(level_select, level_select + "".join([f"<option value='{level}'>{level}</option>" for level
+                                                                in levels if f"value='{level}'" not in level_select]))
+
+
+def add_times(itime, vtimes):
+    global begin
+    time_select = begin.split("name=\"times\"")[-1].split("</select>")[0]
+    if f"optgroup label=\"{itime}\"" not in time_select:
+        begin = begin.replace(time_select, time_select + f"<optgroup label=\"{itime}\" id=\"{itime}\"></optgroup>")
+    opt_group = begin.split(f"label=\"{itime}\"")[-1].split("</optgroup>")[0]
+    begin = begin.replace(opt_group, opt_group + "".join([f"<option value='{time}'>{time}</option>" for time
+                                                          in vtimes if f"value='{time}'" not in opt_group]))
