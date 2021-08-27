@@ -240,7 +240,7 @@ Save a flight track to name it.</string>
      <x>0</x>
      <y>0</y>
      <width>738</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -290,6 +290,7 @@ Save a flight track to name it.</string>
     <addaction name="actionUpdater"/>
     <addaction name="actionOnlineHelp"/>
     <addaction name="actionAboutMSUI"/>
+    <addaction name="actionSearch"/>
    </widget>
    <widget class="QMenu" name="menuViews">
     <property name="title">
@@ -452,6 +453,17 @@ Save a flight track to name it.</string>
   <action name="actionAddProject">
    <property name="text">
     <string>&amp;MSColab Project</string>
+   </property>
+  </action>
+  <action name="actionSearch">
+   <property name="text">
+    <string>Search</string>
+   </property>
+   <property name="toolTip">
+    <string>Search for interactive text in the UI</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
    </property>
   </action>
  </widget>
