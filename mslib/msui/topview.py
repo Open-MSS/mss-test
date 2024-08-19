@@ -47,6 +47,7 @@ from mslib.msui import flighttrack as ft
 from mslib.msui import autoplot_dockwidget as apd
 from mslib.msui.icons import icons
 from mslib.msui.flighttrack import Waypoint
+from mslib.utils.colordialog import CustomColorDialog
 
 # Dock window indices.
 WMS = 0
@@ -189,12 +190,15 @@ class MSUI_TV_MapAppearanceDialog(QtWidgets.QDialog, ui_ma.Ui_MapAppearanceDialo
         elif which == "ft_waypoints":
             button = self.btWaypointsColour
 
-        palette = QtGui.QPalette(button.palette())
-        colour = palette.color(QtGui.QPalette.Button)
-        colour = QtWidgets.QColorDialog.getColor(colour)
-        if colour.isValid():
-            self.signal_ft_vertices_color_change.emit(which, colour.getRgbF())
-            palette.setColor(QtGui.QPalette.Button, colour)
+        dialog = CustomColorDialog(self)
+        dialog.color_selected.connect(lambda color: self.on_color_selected(which, color, button))
+        dialog.exec_()
+
+    def on_color_selected(self, which, color, button):
+        if color.isValid():
+            self.signal_ft_vertices_color_change.emit(which, color.getRgbF())
+            palette = QtGui.QPalette(button.palette())
+            palette.setColor(QtGui.QPalette.Button, color)
             button.setPalette(palette)
 
 
