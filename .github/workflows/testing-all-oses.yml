@@ -29,7 +29,7 @@ jobs:
           sed -e "s/.*://" > requirements.tmp.txt
         cat requirements.d/development.txt >> requirements.tmp.txt
         echo "pytest-randomly" >> requirements.tmp.txt
-        sed -e '/^$/d' -e '/^#.*$/d' requirements.tmp.txt > requirements.txt
+        sed -e '/^$/d' -e '/^#.*$/d' -e 's/\s*# \[not win\]$//' requirements.tmp.txt > requirements.txt
         rm requirements.tmp.txt
         cat requirements.txt
     - name: Get current year and calendar week
