@@ -29,6 +29,7 @@
 
 import os
 import json
+import logging
 from datetime import datetime
 
 import click
@@ -196,9 +197,19 @@ class AutoplotDockWidget(QWidget, Ui_AutoplotDockWidget):
         }
 
         # Invoke the main method using click from the mssautoplot
-        ctx = click.Context(cli_tool)
-        ctx.obj = self
-        ctx.invoke(cli_tool, **args)
+        try:
+            ctx = click.Context(cli_tool)
+            ctx.obj = self
+            ctx.invoke(cli_tool, **args)
+        except SystemExit as ex:
+            logging.error("Can't find given data: %s", ex)
+            QMessageBox.information(
+                self,
+                "Error",
+                ex.args[0]
+            )
+            ctx.obj = None
+            return
 
     def autoplotSecsTreeWidget_selected_row(self):
         selected_items = self.autoplotSecsTreeWidget.selectedItems()
@@ -298,7 +309,12 @@ class AutoplotDockWidget(QWidget, Ui_AutoplotDockWidget):
             config_settings["automated_plotting_flights"].append([flight, sections, vertical, filename, itime, vtime])
             parent.refresh_signal_emit.emit()
         if treewidget.objectName() == "autoplotSecsTreeWidget":
-            if url is None:
+            if url == "":
+                QMessageBox.information(
+                    self,
+                    "WARNING",
+                    "Please select the URL, layer, styles and level (row information first)"
+                )
                 return
             item = QTreeWidgetItem([url, layer, styles, level, self.stime, self.etime, self.intv])
             self.autoplotSecsTreeWidget.addTopLevelItem(item)
@@ -346,7 +362,12 @@ class AutoplotDockWidget(QWidget, Ui_AutoplotDockWidget):
             parent.refresh_signal_emit.emit()
 
         if treewidget.objectName() == "autoplotSecsTreeWidget":
-            if url is None:
+            if url == "":
+                QMessageBox.information(
+                    self,
+                    "WARNING",
+                    "Please select the URL, layer, styles and level (row information first)"
+                )
                 return
             selected_item = self.autoplotSecsTreeWidget.currentItem()
             selected_item.setText(0, url)
