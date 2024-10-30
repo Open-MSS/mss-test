@@ -513,8 +513,27 @@ Publish on Conda Forge
 Google Summer of Code(TM)
 -------------------------
 
-MSS takes part in Google Summer of Code
-as a sub-organization of Python Software Foundation(PSF).
+MSS takes part in `Google Summer of Code <https://summerofcode.withgoogle.com/>`_
+as a `sub-organization of Python Software Foundation (PSF) <https://python-gsoc.org/>`_.
+
+
+GSoC'24 Projects
+................
+
+- `Aryan Gupta: (MSS) msui: Improve MSUI : GSoC 2024 <https://github.com/Open-MSS/MSS/wiki/Aryan-Gupta:-(MSS)-msui:-Improve-MSUI-:-GSOC2024>`_
+- `Preetam Sundar Das: MISSION SUPPORT SYSTEM(MSS): GUI FOR AUTOMATED PLOTTING : GSOC 2024 <https://github.com/Open-MSS/MSS/wiki/Preetam-Sundar-Das:-MISSION-SUPPORT-SYSTEM(MSS):-GUI-FOR-AUTOMATED-PLOTTING-:-GSOC2024>`_
+- `Rohit Prasad: Mission Support System: Improve multiple flightpath docking widget : GSOC 2024 <https://github.com/Open-MSS/MSS/wiki/Rohit-Prasad:-Mission-Support-System:-Improve-multiple-flightpath-docking-widget-:-GSOC2024>`_
+
+
+GSoC'23 Projects
+................
+
+- `Shubh Gaur: Mission Support System(MSS) : UI-improvements : GSOC 2023 <https://github.com/Open-MSS/MSS/wiki/UI%E2%80%90improvements-GSOC-2023>`_
+
+- `Nilupul Manodya: Mission Support System : Implement a SAML 2.0 service provider (SP) into mscolab : GSOC 2023 <https://github.com/Open-MSS/MSS/wiki/Implement-a-SAML-2.0-service-provider-(SP)-into-mscolab-:-GSOC-2023>`_
+
+
+
 
 GSoC'22 Projects
 ................
