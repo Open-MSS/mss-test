@@ -40,6 +40,7 @@ Topics
    authors
    tutorial
    gallery/index
+   funding
 
 
 Indices and tables
