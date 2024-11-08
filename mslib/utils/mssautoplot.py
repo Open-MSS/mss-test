@@ -40,6 +40,7 @@ import click
 import defusedxml.ElementTree as etree
 import PIL.Image
 import matplotlib
+from slugify import slugify
 from fs import open_fs
 
 import mslib
@@ -353,9 +354,9 @@ class TopViewPlotting(Plotting):
         self.myfig.draw_image(img)
         t = str(time)
         date_time = re.sub(r'\W+', '', t)
-        filename = f"{flight}_{layer}_{section}_{date_time}_{no_of_plots}_{elevation}.png"
-        self.myfig.fig.savefig(filename)
-        print(f"The image is saved at: {os.getcwd()}/{filename}")
+        plot_filename = slugify(f"{flight}_{layer}_{section}_{date_time}_{no_of_plots}_{elevation}") + ".png"
+        self.myfig.fig.savefig(plot_filename)
+        print(f"The image is saved at: {os.getcwd()}/{plot_filename}")
 
 
 class SideViewPlotting(Plotting):
@@ -463,14 +464,14 @@ class SideViewPlotting(Plotting):
         img = wms.getmap(**kwargs)
         image_io = io.BytesIO(img.read())
         img = PIL.Image.open(image_io)
-        filename = f"{flight}_{layer}_{time}_{no_of_plots}.png"
+        plot_filename = slugify(f"{flight}_{layer}_{time}_{no_of_plots}") + ".png"
         self.myfig.setup_side_view()
         self.myfig.draw_image(img)
         self.ax.set_title(f"{flight}: {layer} \n{time} {no_of_plots}", horizontalalignment="left", x=0)
         self.myfig.redraw_xaxis(self.lats, self.lons, None, False)
         self.myfig.draw_image(img)
-        self.myfig.fig.savefig(filename, bbox_inches='tight')
-        print(f"The image is saved at: {os.getcwd()}/{filename}")
+        self.myfig.fig.savefig(plot_filename, bbox_inches='tight')
+        print(f"The image is saved at: {os.getcwd()}/{plot_filename}")
 
 
 class LinearViewPlotting(Plotting):
