@@ -40,6 +40,7 @@ import click
 import defusedxml.ElementTree as etree
 import PIL.Image
 import matplotlib
+from slugify import slugify
 from fs import open_fs
 
 import mslib
@@ -238,6 +239,36 @@ class Plotting:
                 raise SystemExit("Filename {} doesn't exist".format(filename))
             self.read_ftml(filename)
 
+    def setup(self):
+        pass
+
+    def update_path(self, filename=None):
+        """
+        Update the path by reading the FTML data from the given filename
+         and redrawing the path based on the updated waypoints model data.
+
+        Parameters:
+        :filename: The name of the file to read FTML data from.
+
+        Returns:
+        None
+        """
+        # plot path and label
+        if filename != "":
+            self.read_ftml(filename)
+        self.fig.canvas.draw()
+        self.plotter.update_from_waypoints(self.wp_model_data)
+        self.plotter.redraw_path(waypoints_model_data=self.wp_model_data)
+
+    def update_path_ops(self, filename=None):
+        self.setup()
+        # plot path and label
+        if filename != "":
+            self.read_operation(filename, self.url, self.msc_auth, self.username, self.password)
+        self.fig.canvas.draw()
+        self.plotter.update_from_waypoints(self.wp_model_data)
+        self.plotter.redraw_path(waypoints_model_data=self.wp_model_data)
+
     def read_ftml(self, filename):
         self.wps, self.wp_model_data = load_from_ftml(filename)
         self.wp_lats, self.wp_lons, self.wp_locs = [[x[i] for x in self.wps] for i in [0, 1, 3]]
@@ -278,37 +309,18 @@ class TopViewPlotting(Plotting):
         self.msc_auth = msc_auth_password
         self.url = msc_url
 
-    def update_path(self, filename=None):
-        """
-        Update the path by reading the FTML data from the given filename
-         and redrawing the path based on the updated waypoints model data.
-
-        Parameters:
-        :filename: The name of the file to read FTML data from.
-
-        Returns:
-        None
-        """
-        # plot path and label
-        if filename != "":
-            self.read_ftml(filename)
-        self.fig.canvas.draw()
-        self.plotter.update_from_waypoints(self.wp_model_data)
-        self.plotter.redraw_path(waypoints_model_data=self.wp_model_data)
-
-    def update_path_ops(self, filename=None):
-        # plot path and label
-        if filename != "":
-            self.read_operation(filename, self.url, self.msc_auth, self.username, self.password)
-        self.fig.canvas.draw()
-        self.plotter.update_from_waypoints(self.wp_model_data)
-        self.plotter.redraw_path(waypoints_model_data=self.wp_model_data)
+    def setup(self):
+        pass
 
     def draw(self, flight, section, vertical, filename, init_time, time, url, layer, style, elevation, no_of_plots):
         if filename != "" and filename == flight:
             self.update_path_ops(filename)
         elif filename != "":
-            self.update_path(filename)
+            try:
+                self.update_path(filename)
+            except AttributeError as e:
+                logging.debug(e)
+                raise SystemExit("No FLIGHT Selected")
 
         width, height = self.myfig.get_plot_size_in_px()
         self.bbox = self.params['basemap']
@@ -330,10 +342,11 @@ class TopViewPlotting(Plotting):
                 }
 
         auth_username, auth_password = get_auth_from_url_and_name(url, self.config["MSS_auth"])
+        # bbox for 1.3.0 needs a fix, swapped order
         wms = MSUIWebMapService(url,
                                 username=auth_username,
                                 password=auth_password,
-                                version='1.3.0')
+                                version='1.1.1')
 
         img = wms.getmap(**kwargs)
         image_io = io.BytesIO(img.read())
@@ -341,13 +354,14 @@ class TopViewPlotting(Plotting):
         self.myfig.draw_image(img)
         t = str(time)
         date_time = re.sub(r'\W+', '', t)
-        self.myfig.fig.savefig(f"{flight}_{layer}_{section}_{date_time}_{no_of_plots}_{elevation}.png")
+        plot_filename = slugify(f"{flight}_{layer}_{section}_{date_time}_{no_of_plots}_{elevation}") + ".png"
+        self.myfig.fig.savefig(plot_filename)
+        print(f"The image is saved at: {os.getcwd()}/{plot_filename}")
 
 
 class SideViewPlotting(Plotting):
     def __init__(self, cpath, msc_url, msc_auth_password, msc_username, msc_password, pdlg):
-        # ToDo Implement access to MSColab
-        super(SideViewPlotting, self).__init__(cpath, msc_url, msc_auth_password, msc_username, msc_password)
+        super(SideViewPlotting, self).__init__(cpath, msc_url, msc_auth_password, msc_username, msc_password, pdlg)
         self.pdlg = pdlg
         self.myfig = qt.SideViewPlotter()
         self.ax = self.myfig.ax
@@ -376,8 +390,18 @@ class SideViewPlotting(Plotting):
         self.myfig.redraw_xaxis(self.lats, self.lons, times, times_visible)
 
     def update_path(self, filename=None):
-        self.setup()
-        if filename is not None:
+        """
+        Update the path by reading the FTML data from the given filename
+         and redrawing the path based on the updated waypoints model data.
+
+        Parameters:
+        :filename: The name of the file to read FTML data from.
+
+        Returns:
+        None
+        """
+        # plot path and label
+        if filename != "":
             self.read_ftml(filename)
         self.fig.canvas.draw()
         self.plotter.update_from_waypoints(self.wp_model_data)
@@ -388,19 +412,27 @@ class SideViewPlotting(Plotting):
         self.myfig.draw_vertical_lines(highlight, self.lats, self.lons)
 
     def update_path_ops(self, filename=None):
+        self.setup()
         # plot path and label
         if filename != "":
             self.read_operation(filename, self.url, self.msc_auth, self.username, self.password)
         self.fig.canvas.draw()
         self.plotter.update_from_waypoints(self.wp_model_data)
-        self.plotter.redraw_path(waypoints_model_data=self.wp_model_data)
+        indices = list(zip(self.intermediate_indexes, self.wp_press))
+        self.plotter.redraw_path(vertices=indices,
+                                 waypoints_model_data=self.wp_model_data)
+        highlight = [[wp[0], wp[1]] for wp in self.wps]
+        self.myfig.draw_vertical_lines(highlight, self.lats, self.lons)
 
     def draw(self, flight, section, vertical, filename, init_time, time, url, layer, style, elevation, no_of_plots):
-        try:
-            self.update_path(filename)
-        except AttributeError as e:
-            logging.debug(e)
-            raise SystemExit("No FLIGHT Selected")
+        if filename != "" and filename == flight:
+            self.update_path_ops(filename)
+        elif filename != "":
+            try:
+                self.update_path(filename)
+            except AttributeError as e:
+                logging.debug(e)
+                raise SystemExit("No FLIGHT Selected")
         width, height = self.myfig.get_plot_size_in_px()
         p_bot, p_top = [float(x) * 100 for x in vertical.split(",")]
         self.bbox = tuple([x for x in (self.num_interpolation_points,
@@ -421,18 +453,25 @@ class SideViewPlotting(Plotting):
                   "format": "image/png",
                   "size": (width, height)
                 }
+
         auth_username, auth_password = get_auth_from_url_and_name(url, self.config["MSS_auth"])
+        # bbox for sideview is correct
         wms = MSUIWebMapService(url,
                                 username=auth_username,
                                 password=auth_password,
                                 version='1.3.0')
 
         img = wms.getmap(**kwargs)
-
         image_io = io.BytesIO(img.read())
         img = PIL.Image.open(image_io)
+        plot_filename = slugify(f"{flight}_{layer}_{time}_{no_of_plots}") + ".png"
+        self.myfig.setup_side_view()
         self.myfig.draw_image(img)
-        self.myfig.fig.savefig(f"{flight}_{layer}_{no_of_plots}.png", bbox_inches='tight')
+        self.ax.set_title(f"{flight}: {layer} \n{time} {no_of_plots}", horizontalalignment="left", x=0)
+        self.myfig.redraw_xaxis(self.lats, self.lons, None, False)
+        self.myfig.draw_image(img)
+        self.myfig.fig.savefig(plot_filename, bbox_inches='tight')
+        print(f"The image is saved at: {os.getcwd()}/{plot_filename}")
 
 
 class LinearViewPlotting(Plotting):
@@ -524,6 +563,8 @@ class LinearViewPlotting(Plotting):
 @click.option('--etime', default="", help='Ending time for downloading multiple plots with a fixed interval.')
 @click.pass_context
 def main(ctx, cpath, view, ftrack, itime, vtime, intv, stime, etime):
+    pdlg = None
+
     def close_process_dialog(pdlg):
         pdlg.close()
 
@@ -575,6 +616,9 @@ def main(ctx, cpath, view, ftrack, itime, vtime, intv, stime, etime):
             elif view == "side":
                 side_view.draw(flight, section, vertical, filename, init_time, time,
                                url, layer, style, elevation, no_of_plots=no_of_plots)
+            else:
+                print("View is not available, Plot not created!")
+                return False
         except Exception as e:
             if "times" in str(e):
                 print("Invalid times and/or levels requested")
