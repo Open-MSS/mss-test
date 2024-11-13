@@ -370,7 +370,7 @@ class MSUIDefaultConfig:
         "automated_plotting_flights": [["", "", "", "", "", ""]],
         "automated_plotting_hsecs": [["http://www.your-wms-server.de", "", "", ""]],
         "automated_plotting_vsecs": [["http://www.your-wms-server.de", "", "", ""]],
-        "automated_plotting_lsecs": [["http://www.your-wms-server.de", "", ""]]
+        "automated_plotting_lsecs": [["http://www.your-wms-server.de", "", "", "pressure"]]
     }
 
     config_descriptions = {
