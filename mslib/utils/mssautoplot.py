@@ -476,11 +476,13 @@ class SideViewPlotting(Plotting):
 
 class LinearViewPlotting(Plotting):
     # ToDo Implement access of MSColab
-    def __init__(self, cpath, msc_url, msc_auth_password, msc_username, msc_password):
+    def __init__(self, cpath, msc_url, msc_auth_password, msc_username, msc_password, pdlg):
         super(LinearViewPlotting, self).__init__(cpath, msc_url, msc_auth_password, msc_username, msc_password)
+        self.pdlg = pdlg
         self.myfig = qt.LinearViewPlotter()
         self.ax = self.myfig.ax
         matplotlib.backends.backend_agg.FigureCanvasAgg(self.myfig.fig)
+        self.plotter = mpath.PathV_Plotter(self.myfig.ax)
         self.fig = self.myfig.fig
         self.username = msc_username
         self.password = msc_password
@@ -488,68 +490,84 @@ class LinearViewPlotting(Plotting):
         self.url = msc_url
 
     def setup(self):
-        self.bbox = (self.num_interpolation_points,)
+
         linearview_size_settings = config_loader(dataset="linearview")
         settings_dict = {"plot_title_size": linearview_size_settings["plot_title_size"],
                          "axes_label_size": linearview_size_settings["axes_label_size"]}
         self.myfig.set_settings(settings_dict)
         self.myfig.setup_linear_view()
 
+    def update_path(self, filename=None):
+        self.setup()
+        if filename != "":
+            self.read_ftml(filename)
+
+        highlight = [[wp[0], wp[1]] for wp in self.wps]
+        self.myfig.draw_vertical_lines(highlight, self.lats, self.lons)
+
     def update_path_ops(self, filename=None):
+        self.setup()
+        # plot path and la
         # plot path and label
         if filename != "":
             self.read_operation(filename, self.url, self.msc_auth, self.username, self.password)
-        self.fig.canvas.draw()
-        self.plotter.update_from_waypoints(self.wp_model_data)
-        self.plotter.redraw_path(waypoints_model_data=self.wp_model_data)
+        highlight = [[wp[0], wp[1]] for wp in self.wps]
+        self.myfig.draw_vertical_lines(highlight, self.lats, self.lons)
 
-    def draw(self):
-        for flight, section, vertical, filename, init_time, time in self.config["automated_plotting_flights"]:
-            for url, layer, style in self.config["automated_plotting_lsecs"]:
-                width, height = self.myfig.get_plot_size_in_px()
+    def draw(self, flight, section, vertical, filename, init_time, time, url, layer, style, elevation, no_of_plots):
+        if filename != "" and filename == flight:
+            self.update_path_ops(filename)
+        elif filename != "":
+            try:
+                self.update_path(filename)
+            except AttributeError as e:
+                logging.debug(e)
+                raise SystemExit("No FLIGHT Selected")
+        width, height = self.myfig.get_plot_size_in_px()
+        self.bbox = (self.num_interpolation_points,)
 
-                if not init_time:
-                    init_time = None
+        if not init_time:
+            init_time = None
 
-                auth_username, auth_password = get_auth_from_url_and_name(url, self.config["MSS_auth"])
-                wms = MSUIWebMapService(url,
-                                        username=auth_username,
-                                        password=auth_password,
-                                        version='1.3.0')
+        auth_username, auth_password = get_auth_from_url_and_name(url, self.config["MSS_auth"])
+        wms = MSUIWebMapService(url,
+                                username=auth_username,
+                                password=auth_password,
+                                version='1.3.0')
 
-                path_string = ""
-                for i, wp in enumerate(self.wps):
-                    path_string += f"{wp[0]:.2f},{wp[1]:.2f},{self.wp_press[i]},"
-                path_string = path_string[:-1]
+        path_string = ""
+        for i, wp in enumerate(self.wps):
+            path_string += f"{wp[0]:.2f},{wp[1]:.2f},{self.wp_press[i]},"
+        path_string = path_string[:-1]
+        kwargs = {"layers": [layer],
+                  "styles": [style],
+                  "time": time,
+                  "init_time": init_time,
+                  "exceptions": 'application/vnd.ogc.se_xml',
+                  "srs": "LINE:1",
+                  "path_str": path_string,
+                  "bbox": self.bbox,
+                  "format": "text/xml",
+                  "size": (width, height)
+                  }
+        xmls = wms.getmap(**kwargs)
 
-                # retrieve and draw image
-                kwargs = {"layers": [layer],
-                          "styles": [style],
-                          "time": time,
-                          "init_time": init_time,
-                          "exceptions": 'application/vnd.ogc.se_xml',
-                          "srs": "LINE:1",
-                          "path_str": path_string,
-                          "bbox": self.bbox,
-                          "format": "text/xml",
-                          "size": (width, height)
-                         }
+        if not isinstance(xmls, list):
+            xmls = [xmls]
 
-                xmls = wms.getmap(**kwargs)
+        xml_objects = []
+        for xml_ in xmls:
+            xml_data = etree.fromstring(xml_.read())
+            xml_objects.append(xml_data)
 
-                if not isinstance(xmls, list):
-                    xmls = [xmls]
-
-                xml_objects = []
-                for xml_ in xmls:
-                    xml_data = etree.fromstring(xml_.read())
-                    xml_objects.append(xml_data)
-
-                self.myfig.draw_image(xml_objects, colors=None, scales=None)
-                self.myfig.redraw_xaxis(self.lats, self.lons)
-                highlight = [[wp[0], wp[1]] for wp in self.wps]
-                self.myfig.draw_vertical_lines(highlight, self.lats, self.lons)
-                self.myfig.fig.savefig(f"{flight}_{layer}.png", bbox_inches='tight')
+        self.myfig.draw_image(xml_objects, colors=None, scales=None)
+        self.myfig.redraw_xaxis(self.lats, self.lons)
+        highlight = [[wp[0], wp[1]] for wp in self.wps]
+        plot_filename = slugify(f"{flight}_{layer}") + ".png"
+        self.myfig.draw_vertical_lines(highlight, self.lats, self.lons)
+        self.myfig.ax.set_title(f"{flight}: {layer} \n{time} {no_of_plots}", horizontalalignment="left", x=0)
+        self.myfig.fig.savefig(plot_filename, bbox_inches='tight')
+        print(f"The image is saved at: {os.getcwd()}/{plot_filename}")
 
 
 @click.command()
@@ -602,9 +620,15 @@ def main(ctx, cpath, view, ftrack, itime, vtime, intv, stime, etime):
     if view == "top":
         top_view = TopViewPlotting(cpath, msc_url, msc_auth_password, msc_username, msc_password, pdlg)
         sec = "automated_plotting_hsecs"
-    else:
+    elif view == "side":
         side_view = SideViewPlotting(cpath, msc_url, msc_auth_password, msc_username, msc_password, pdlg)
         sec = "automated_plotting_vsecs"
+    elif view == "linear":
+        linear_view = LinearViewPlotting(cpath, msc_url, msc_auth_password, msc_username, msc_password, pdlg)
+        sec = "automated_plotting_lsecs"
+    else:
+        print("Invalid view")
+
     if ctx.obj is not None:
         pdlg.setValue(2)
 
@@ -616,6 +640,9 @@ def main(ctx, cpath, view, ftrack, itime, vtime, intv, stime, etime):
             elif view == "side":
                 side_view.draw(flight, section, vertical, filename, init_time, time,
                                url, layer, style, elevation, no_of_plots=no_of_plots)
+            elif view == "linear":
+                linear_view.draw(flight, section, vertical, filename, init_time, time,
+                                 url, layer, style, elevation, no_of_plots)
             else:
                 print("View is not available, Plot not created!")
                 return False
