@@ -287,7 +287,7 @@ Double click a operation to activate and view its description.</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
+           <item row="1" column="0" alignment="Qt::AlignLeft">
             <widget class="QLabel" name="activeOperationDesc">
              <property name="maximumSize">
               <size>
@@ -420,7 +420,7 @@ Double click a operation to activate and view its description.</string>
      <x>0</x>
      <y>0</y>
      <width>738</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
