@@ -385,7 +385,8 @@ class MSUIDefaultConfig:
         "default_MSCOLAB": "List of the URLs of default MSColab servers",
         "MSS_auth": "Dictionary containing credentials for http auth",
         "MSCOLAB_auth_user_name": "Username used for http auth",
-        "MSCOLAB_timeout": "Tuple specifying timeout for MSColab in seconds. First value is for connection, second for reply",
+        "MSCOLAB_timeout": "Tuple specifying timeout for MSColab in seconds. First value is for connection,"
+                           " second for reply",
         "WMS_request_timeout": "Timeout of WMS Url request",
         "WMS_preload": "List of WMS URLs to preload",
         "wms_cache": "Path to WMS image cache directory",
@@ -393,11 +394,12 @@ class MSUIDefaultConfig:
         "wms_cache_max_age_seconds": "Maximum age of a cached file in seconds",
         "wms_prefetch": "Dictionary configuring the prefetch behaviour of WMS",
         "locations": "Dictionary providing geo-coordinates for predefined locations",
-        "new_flighttrack_template": "List of predefined location names used as a flight track template when creating a new flight track",
+        "new_flighttrack_template": "List of predefined location names used as a flight track template"
+                                    " when creating a new flight track",
         "new_flighttrack_flightlevel": "Default flight level for waypoints inserted by the flighttrack template",
         "proxies": "Proxy settings for network requests",
         "mscolab_server_url": "URL of the MSColab server",
-        "mss_dir": "Directory path used for MSS", # ToDo is this needed or can be replaced by data_dir?
+        "mss_dir": "Directory path used for MSS",  # ToDo is this needed or can be replaced by data_dir?
         "gravatar_ids": "List of gravatar email ids to automatically fetch",
         "export_plugins": "Dictionary of export plugins",
         "import_plugins": "Dictionary of import plugins",
