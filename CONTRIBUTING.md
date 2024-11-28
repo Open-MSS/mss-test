@@ -6,4 +6,3 @@ All kind of contributions are welcome, including issue descriptions and new docu
 as well as updates and improvements and more.
 
 Our **[contributing](https://open-mss.github.io/contributing/)** guidelines provide instructions on how to get involved.
-
