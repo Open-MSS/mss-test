@@ -86,7 +86,7 @@ requirements:
     - flask-login
     - pysaml2
     - libxmlsec1  # [not win]
-    - cryptograhy <44.0.0
+    - cryptography <44.0.0
   run_constrained:
     - menuinst >=2.0.2
 
