@@ -46,7 +46,8 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 from mslib import __version__
 from mslib.utils.units import units
-from mslib.utils.coordinate import find_location, path_points, get_distance
+from mslib.utils.coordinate import path_points, get_distance
+from mslib.utils.find_location import find_location
 from mslib.utils import thermolib
 from mslib.utils.verify_waypoint_data import verify_waypoint_data
 from mslib.utils.config import config_loader, save_settings_qsettings, load_settings_qsettings

@@ -31,6 +31,8 @@ import numpy as np
 import pytest
 
 import mslib.utils.coordinate as coordinate
+from mslib.utils.find_location import find_location
+from mslib.utils.get_projection_params import get_projection_params
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,19 +50,19 @@ class TestGetDistance:
             assert int(coordinate.get_distance(lat0, lon0, lat1, lon1)) == distance
 
     def test_find_location(self):
-        assert coordinate.find_location(50.92, 6.36) == ([50.92, 6.36], 'Juelich')
-        assert coordinate.find_location(50.9200002, 6.36) == ([50.92, 6.36], 'Juelich')
+        assert find_location(50.92, 6.36) == ([50.92, 6.36], 'Juelich')
+        assert find_location(50.9200002, 6.36) == ([50.92, 6.36], 'Juelich')
 
 
 class TestProjections:
     def test_get_projection_params(self):
-        assert coordinate.get_projection_params("epsg:4839") == {'basemap': {'epsg': '4839'}, 'bbox': 'meter(10.5,51)'}
+        assert get_projection_params("epsg:4839") == {'basemap': {'epsg': '4839'}, 'bbox': 'meter(10.5,51)'}
         with pytest.raises(ValueError):
-            coordinate.get_projection_params('auto2:42005')
+            get_projection_params('auto2:42005')
         with pytest.raises(ValueError):
-            coordinate.get_projection_params('auto:42001')
+            get_projection_params('auto:42001')
         with pytest.raises(ValueError):
-            coordinate.get_projection_params('crs:83')
+            get_projection_params('crs:83')
 
 
 class TestAngles:

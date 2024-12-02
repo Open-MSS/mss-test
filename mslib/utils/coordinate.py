@@ -26,15 +26,11 @@
     limitations under the License.
 """
 
-import logging
 import netCDF4 as nc
 import numpy as np
 from pyproj import Geod
 from scipy.interpolate import interp1d
 from scipy.ndimage import map_coordinates
-
-from mslib.utils.config import config_loader
-
 
 __PR = Geod(ellps='WGS84')
 
@@ -52,23 +48,6 @@ def get_distance(lat0, lon0, lat1, lon1):
         length of distance in km
     """
     return __PR.inv(lon0, lat0, lon1, lat1)[-1] / 1000.
-
-
-def find_location(lat, lon, tolerance=5):
-    """
-    Checks if a location is present at given coordinates
-    :param lat: latitude
-    :param lon: longitude
-    :param tolerance: maximum distance between location and coordinates in km
-    :return: None or lat/lon, name
-    """
-    locations = config_loader(dataset='locations')
-    distances = sorted([(get_distance(lat, lon, loc_lat, loc_lon), loc)
-                        for loc, (loc_lat, loc_lon) in locations.items()])
-    if len(distances) > 0 and distances[0][0] <= tolerance:
-        return locations[distances[0][1]], distances[0][1]
-    else:
-        return None
 
 
 def fix_angle(ang):
@@ -105,127 +84,6 @@ def rotate_point(point, angle, origin=(0, 0)):
                   (point[0] - origin[0]) * np.sin(angle) +
                   (point[1] - origin[1]) * np.cos(angle) + origin[1])
     return temp_point
-
-
-def get_projection_params(proj):
-    proj = proj.lower()
-    if proj.startswith("crs:"):
-        projid = proj[4:]
-        if projid == "84":
-            proj_params = {
-                "basemap": {"projection": "cyl"},
-                "bbox": "degree"}
-        else:
-            raise ValueError("Only CRS code 84 is supported: '%s' given", proj)
-
-    elif proj.startswith("auto:"):
-        raise ValueError("AUTO not supported")
-
-        projid, unitsid, lon0, lat0 = proj[5:].split(",")
-        if projid == "42001":
-            proj_params = {
-                "basemap": {"projection": "tmerc", "lon_0": lon0, "lat_0": lat0},
-                "bbox": f"meter({lon0},{lat0})"}
-        elif projid == "42002":
-            proj_params = {
-                "basemap": {"projection": "tmerc", "lon_0": lon0, "lat_0": lat0},
-                "bbox": f"meter({lon0},{lat0})"}
-        elif projid == "42003":
-            proj_params = {
-                "basemap": {"projection": "ortho", "lon_0": lon0, "lat_0": lat0},
-                "bbox": f"meter({lon0},{lat0})"}
-        else:
-            raise ValueError("unspecified AUTO code: '%s'", proj)
-
-    elif proj.startswith("auto2:"):
-        raise ValueError("AUTO2 not supported")
-
-        projid, factor, lon0, lat0 = proj[6:].split(",")
-        if projid == "42001":
-            proj_params = {
-                "basemap": {"projection": "tmerc", "lon_0": lon0, "lat_0": lat0},
-                "bbox": f"meter({lon0},{lat0})"}
-        elif projid == "42002":
-            proj_params = {
-                "basemap": {"projection": "tmerc", "lon_0": lon0, "lat_0": lat0},
-                "bbox": f"meter({lon0},{lat0})"}
-        elif projid == "42003":
-            proj_params = {
-                "basemap": {"projection": "ortho", "lon_0": lon0, "lat_0": lat0},
-                "bbox": f"meter({lon0},{lat0})"}
-        elif projid == "42004":
-            proj_params = {
-                "basemap": {"projection": "cyl"},
-                "bbox": f"meter({lon0},{lat0})"}
-        elif projid == "42005":
-            proj_params = {
-                "basemap": {"projection": "moll", "lon_0": lon0, "lat_0": lat0},
-                "bbox": "meter???"}
-        else:
-            raise ValueError("unspecified AUTO2 code: '%s'", proj)
-
-    elif proj.startswith("epsg:"):
-        epsg = proj[5:]
-        if epsg.startswith("777") and len(epsg) == 8:  # user defined MSS code. deprecated.
-            logging.warning("Using deprecated MSS-specific EPSG code. Switch to 'MSS:stere' instead.")
-            lat_0, lon_0 = int(epsg[3:5]), int(epsg[5:])
-            proj_params = {
-                "basemap": {"projection": "stere", "lat_0": lat_0, "lon_0": lon_0},
-                "bbox": "degree"}
-        elif epsg.startswith("778") and len(epsg) == 8:  # user defined MSS code. deprecated.
-            logging.warning("Using deprecated MSS-specific EPSG code. Switch to 'MSS:stere' instead.")
-            lat_0, lon_0 = int(epsg[3:5]), int(epsg[5:])
-            proj_params = {
-                "basemap": {"projection": "stere", "lat_0": -lat_0, "lon_0": lon_0},
-                "bbox": "degree"}
-        elif epsg in ("4258", "4326"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "degree"}
-        elif epsg in ("3031", "3412"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "meter(0,-90)"}
-        elif epsg in ("3411", "3413", "3575", "3995"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "meter(0,90)"}
-        elif epsg in ("3395", "3857"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "meter(0,0)"}
-        elif epsg in ("4839"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "meter(10.5,51)"}
-        elif epsg in ("31467"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "meter(-20.9631343,0.0037502)"}
-        elif epsg in ("31468"):
-            proj_params = {"basemap": {"epsg": epsg}, "bbox": "meter(-25.4097892,0.0037466)"}
-        else:
-            raise ValueError("EPSG code not supported by basemap module: '%s'", proj)
-
-    elif proj.startswith("mss:"):
-        # some MSS-specific codes
-        params = proj[4:].split(",")
-        name = params[0]
-        if name == "stere":
-            lon0, lat0, lat_ts = params[1:]
-            proj_params = {
-                "basemap": {"projection": name, "lat_0": lat0, "lon_0": lon0, "lat_ts": lat_ts},
-                "bbox": "degree"}
-        elif name == "cass":
-            lon0, lat0 = params[1:]
-            proj_params = {
-                "basemap": {"projection": name, "lon_0": lon0, "lat_0": lat0},
-                "bbox": "degree"}
-        elif name == "lcc":
-            lon0, lat0, lat1, lat2 = params[1:]
-            proj_params = {
-                "basemap": {"projection": name, "lon_0": lon0, "lat_0": lat0, "lat_1": lat1, "lat_2": lat2},
-                "bbox": "degree"}
-        elif name == "merc":
-            lat_ts = params[1]
-            proj_params = {
-                "basemap": {"projection": name, "lat_ts": lat_ts},
-                "bbox": "degree"}
-        else:
-            raise ValueError("unknown MSS projection: '%s'", proj)
-
-    else:
-        raise ValueError("unknown projection: '%s'", proj)
-    logging.debug("Identified CRS '%s' as '%s'", proj, proj_params)
-    return proj_params
 
 
 def interpolate_vertsec(data3D, data3D_lats, data3D_lons, lats, lons):

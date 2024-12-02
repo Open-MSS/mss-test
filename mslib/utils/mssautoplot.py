@@ -58,6 +58,7 @@ from mslib.msui import mpl_qtwidget as qt
 from mslib.msui import mpl_pathinteractor as mpath
 from mslib.msui import flighttrack as ft
 from mslib.utils import config as conf
+from mslib.utils.get_projection_params import get_projection_params
 from mslib.utils.auth import get_auth_from_url_and_name
 from mslib.utils.loggerdef import configure_mpl_logger
 from mslib.utils.verify_user_token import verify_user_token
@@ -219,8 +220,7 @@ class Plotting:
         filename = self.config["automated_plotting_flights"][0][3]
         if self.__class__.__name__ == "TopViewPlotting":
             try:
-                self.params = mslib.utils.coordinate.get_projection_params(
-                    self.config["predefined_map_sections"][section]["CRS"].lower())
+                self.params = get_projection_params(self.config["predefined_map_sections"][section]["CRS"].lower())
             except KeyError as e:
                 print(e)
                 raise SystemExit("Invalid SECTION and/or CRS")

@@ -32,7 +32,7 @@ import functools
 import logging
 
 from mslib.utils.config import config_loader
-from mslib.utils.coordinate import get_projection_params
+from mslib.utils.get_projection_params import get_projection_params
 from PyQt5 import QtGui, QtWidgets, QtCore
 from mslib.msui.qt5 import ui_topview_window as ui
 from mslib.msui.qt5 import ui_topview_mapappearance as ui_ma

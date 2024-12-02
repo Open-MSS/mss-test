@@ -39,6 +39,7 @@ import matplotlib.pyplot as plt
 
 import mslib
 import mslib.utils
+from mslib.utils.get_projection_params import get_projection_params
 from mslib.utils import thermolib
 from mslib.utils.config import config_loader, read_config_file
 from mslib.utils.units import units
@@ -140,8 +141,7 @@ def main():
     fig = plt.figure()
     for flight, section, vertical, filename, init_time, time in \
             config["automated_plotting"]["flights"]:
-        params = mslib.utils.coordinate.get_projection_params(
-            config["predefined_map_sections"][section]["CRS"].lower())
+        params = get_projection_params(config["predefined_map_sections"][section]["CRS"].lower())
         params["basemap"].update(config["predefined_map_sections"][section]["map"])
         wps = load_from_ftml(filename)
         wp_lats, wp_lons, wp_locs = [[x[i] for x in wps] for i in [0, 1, 3]]

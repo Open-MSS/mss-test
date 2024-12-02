@@ -37,8 +37,7 @@ from mslib.msui.constants import MSUI_SETTINGS
 from mslib.msui.icons import icons
 from mslib.utils.config import MSUIDefaultConfig as mss_default
 from mslib.utils.config import config_loader, dict_raise_on_duplicates_empty, merge_dict
-from mslib.utils.coordinate import get_projection_params
-
+from mslib.utils.get_projection_params import get_projection_params
 
 from mslib.support.qt_json_view import delegate
 from mslib.support.qt_json_view.view import JsonView
