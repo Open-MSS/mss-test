@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 9.3.0
+~~~~~~~~~~~~~
+Bug fix release and minor enhancements:
+We removed unused modules from the mscolab saml2 setup.
+
+All changes:
+https://github.com/Open-MSS/MSS/milestone/108?closed=1
+
 Version 9.2.0
 ~~~~~~~~~~~~~
 
