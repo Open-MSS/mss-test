@@ -30,10 +30,10 @@ import json
 
 import requests
 from urllib.parse import urljoin, urlencode
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 from mslib.utils.verify_user_token import verify_user_token
 from mslib.msui.flighttrack import WaypointsTableModel
-from PyQt5 import QtCore, QtWidgets, QtGui
 from mslib.msui.qt5 import ui_mscolab_version_history as ui
 from mslib.utils.qt import show_popup
 from mslib.utils.config import config_loader
@@ -71,7 +71,7 @@ class MSColabVersionHistory(QtWidgets.QMainWindow, ui.Ui_MscolabVersionHistory):
         self.mscolab_server_url = mscolab_server_url
 
         # Event handlers
-        self.refreshBtn.clicked.connect(self.handle_refresh)
+        self.conn.signal_reload.connect(self.handle_refresh)
         self.checkoutBtn.clicked.connect(self.handle_undo)
         self.nameVersionBtn.clicked.connect(self.handle_named_version)
         self.deleteVersionNameBtn.clicked.connect(self.handle_delete_version_name)
@@ -134,7 +134,7 @@ class MSColabVersionHistory(QtWidgets.QMainWindow, ui.Ui_MscolabVersionHistory):
                 "op_id": self.op_id
             }
             named_version_only = False
-            if self.versionFilterCB.currentIndex() == 0:
+            if self.versionFilterCB.currentIndex() == 1:
                 named_version_only = True
             query_string = urlencode({"named_version": named_version_only})
             url_path = f'get_all_changes?{query_string}'
@@ -149,7 +149,8 @@ class MSColabVersionHistory(QtWidgets.QMainWindow, ui.Ui_MscolabVersionHistory):
                     date = local_time.strftime('%d/%m/%Y')
                     time = local_time.strftime('%I:%M %p')
                     item_text = f'{change["username"]} made change on {date} at {time}'
-                    if change["version_name"] is not None:
+                    # default is None, but adding waypoints uses str(None)
+                    if str(change["version_name"]) != 'None':
                         item_text = f'{change["version_name"]}\n{item_text}'
                     item = QtWidgets.QListWidgetItem(item_text, parent=self.changes)
                     item.id = change["id"]

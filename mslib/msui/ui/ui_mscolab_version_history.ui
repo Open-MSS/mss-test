@@ -78,13 +78,6 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
-           <widget class="QPushButton" name="refreshBtn">
-            <property name="text">
-             <string>Refresh Window</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QLabel" name="label">
@@ -103,12 +96,12 @@
               </property>
               <item>
                <property name="text">
-                <string>Named Versions</string>
+                <string>All Changes</string>
                </property>
               </item>
               <item>
                <property name="text">
-                <string>All Changes</string>
+                <string>Named Versions</string>
                </property>
               </item>
              </widget>

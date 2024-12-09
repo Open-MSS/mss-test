@@ -66,14 +66,13 @@ class Test_MscolabVersionHistory:
             self.window.mscolab.conn.disconnect()
 
     def test_changes(self, qtbot):
-        self._change_version_filter(1)
+        self._change_version_filter(0)
         len_prev = self.version_window.changes.count()
         # make a changes
         self.window.mscolab.waypoints_model.invert_direction()
         self.window.mscolab.waypoints_model.invert_direction()
 
         def assert_():
-            self.version_window.load_all_changes()
             len_after = self.version_window.changes.count()
             assert len_prev == (len_after - 2)
         qtbot.wait_until(assert_)
@@ -83,16 +82,18 @@ class Test_MscolabVersionHistory:
 
     def test_version_name_delete(self, qtbot):
         self._set_version_name(qtbot)
+        self._activate_change_at_index(0)
         QtTest.QTest.mouseClick(self.version_window.deleteVersionNameBtn, QtCore.Qt.LeftButton)
 
         def assert_():
             assert self.version_window.changes.count() == 1
-            assert self.version_window.changes.currentItem().version_name is None
+            self._activate_change_at_index(0)
+            assert str(self.version_window.changes.currentItem().version_name) == "None"
         qtbot.wait_until(assert_)
 
     @mock.patch("PyQt5.QtWidgets.QMessageBox.question", return_value=QtWidgets.QMessageBox.Yes)
     def test_undo_changes(self, mockbox, qtbot):
-        self._change_version_filter(1)
+        self._change_version_filter(0)
         assert self.version_window.changes.count() == 0
         # make changes
         for i in range(2):
@@ -107,15 +108,6 @@ class Test_MscolabVersionHistory:
         QtTest.QTest.mouseClick(self.version_window.checkoutBtn, QtCore.Qt.LeftButton)
         new_changes_count = self.version_window.changes.count()
         assert changes_count + 1 == new_changes_count
-
-    def test_refresh(self):
-        self._change_version_filter(1)
-        changes_count = self.version_window.changes.count()
-        self.window.mscolab.waypoints_model.invert_direction()
-        self.window.mscolab.waypoints_model.invert_direction()
-        QtTest.QTest.mouseClick(self.version_window.refreshBtn, QtCore.Qt.LeftButton)
-        new_changes_count = self.version_window.changes.count()
-        assert new_changes_count == changes_count + 2
 
     def _connect_to_mscolab(self, qtbot):
         self.connect_window = mscolab.MSColab_ConnectDialog(parent=self.window, mscolab=self.window.mscolab)
@@ -158,7 +150,7 @@ class Test_MscolabVersionHistory:
         self.version_window.versionFilterCB.currentIndexChanged.emit(index)
 
     def _set_version_name(self, qtbot):
-        self._change_version_filter(1)
+        self._change_version_filter(0)
         num_changes_before = self.version_window.changes.count()
         # make a changes
         self.window.mscolab.waypoints_model.invert_direction()
