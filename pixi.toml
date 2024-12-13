@@ -83,6 +83,7 @@ geomag = "*"
 geopy = "*"
 
 [feature.dev.dependencies]
+codespell = "*"
 coveralls = "*"
 dnspython = ">=2.0.0, <2.3.0"
 eventlet = ">0.30.2"
