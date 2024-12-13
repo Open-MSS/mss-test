@@ -27,7 +27,7 @@
 # style definitions should be put in mpl_lsec_styles.py
 
 import logging
-from xml.dom.minidom import getDOMImplementation
+from xml.dom.minidom import getDOMImplementation  # nosec
 import matplotlib as mpl
 from pint import Quantity
 

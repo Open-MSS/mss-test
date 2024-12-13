@@ -33,7 +33,7 @@ import io
 import logging
 import numpy as np
 from abc import abstractmethod
-from xml.dom.minidom import getDOMImplementation
+from xml.dom.minidom import getDOMImplementation  # nosec
 import matplotlib as mpl
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import mpl_toolkits.axes_grid1

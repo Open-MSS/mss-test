@@ -39,8 +39,9 @@ import logging
 import os
 
 import fs
-import xml.dom.minidom
-import xml.parsers.expat
+import xml.dom.minidom  # nosec
+import defusedxml.minidom
+from defusedxml import DefusedXmlException
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 
@@ -97,8 +98,8 @@ TABLE_SHORT = [TABLE_FULL[_i] for _i in range(7)] + [TABLE_FULL[-1]] + [("", lam
 
 def load_from_xml_data(xml_content, name="Flight track"):
     try:
-        doc = xml.dom.minidom.parseString(xml_content)
-    except xml.parsers.expat.ExpatError as ex:
+        doc = defusedxml.minidom.parseString(xml_content)
+    except DefusedXmlException as ex:
         raise SyntaxError(str(ex))
 
     ft_el = doc.getElementsByTagName("FlightTrack")[0]

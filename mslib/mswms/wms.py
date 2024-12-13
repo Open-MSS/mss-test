@@ -52,7 +52,7 @@ import traceback
 import werkzeug
 import urllib.parse
 
-from xml.etree import ElementTree
+from defusedxml import ElementTree
 from chameleon import PageTemplateLoader
 from owslib.crs import axisorder_yx
 from PIL import Image
