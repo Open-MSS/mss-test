@@ -213,5 +213,7 @@ class Change(db.Model):
         self.op_id = int(op_id)
         self.u_id = int(u_id)
         self.commit_hash = str(commit_hash)
-        self.version_name = str(version_name)
-        self.comment = str(comment)
+        if version_name is not None:
+            self.version_name = str(version_name)
+        if comment is not None:
+            self.comment = str(comment)
