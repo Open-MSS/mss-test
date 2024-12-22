@@ -298,6 +298,7 @@ class MSUISideViewWindow(MSUIMplViewWindow, ui.Ui_SideViewWindow):
         super().__init__(parent, model, _id)
         self.tutorial_mode = tutorial_mode
         self.setupUi(self)
+        self.mpl.canvas.plotter.fig.suptitle(f"{model.name}")
         self.setWindowIcon(QtGui.QIcon(icons('64x64')))
         self.settings_tag = "sideview"
         # Dock windows [WMS]:
