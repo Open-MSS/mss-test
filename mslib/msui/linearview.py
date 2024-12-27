@@ -97,7 +97,6 @@ class MSUILinearViewWindow(MSUIMplViewWindow, ui.Ui_LinearWindow):
 
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(icons('64x64')))
-        self.mpl.canvas.plotter.fig.suptitle(f"{model.name}")
 
         # Dock windows [WMS]:
         self.cbTools.clear()
