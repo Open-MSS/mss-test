@@ -278,7 +278,7 @@ class MSUIMplViewWindow(MSUIViewWindow):
                 self.mpl.canvas.map.update_info_text(name=model.name)
                 self.mpl.canvas.map.ax.figure.canvas.draw()
 
-            if hasattr(self.mpl.canvas,'plotter'):
+            elif hasattr(self.mpl.canvas,'plotter'):
                 self.mpl.canvas.plotter.fig.suptitle(f"{model.name}", x=0.95, ha='right')
                 self.mpl.canvas.plotter.fig.canvas.draw()
 
