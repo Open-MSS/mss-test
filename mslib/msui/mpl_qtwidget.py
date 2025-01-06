@@ -113,6 +113,7 @@ class ViewPlotter:
 
     def draw_metadata(self, title="", init_time=None, valid_time=None,
                       level=None, style=None):
+
         if style:
             title += f" ({style})"
         if level:
@@ -138,7 +139,10 @@ class ViewPlotter:
                 title += f"\nValid: {valid_time}"
 
         # Set title.
+        # title = self.fig._suptitle.get_text()
+        print(self.fig._suptitle)
         self.ax.set_title(title, horizontalalignment='left', x=0)
+        # self.fig.suptitle(f"{title}", x=0.95, ha='right')
 
     def get_plot_size_in_px(self):
         """Determines the size of the current figure in pixels.
@@ -733,7 +737,9 @@ class LinearViewPlotter(ViewPlotter):
             raise NotImplementedError
 
     def draw_image(self, xmls, colors=None, scales=None):
+        title = self.fig._suptitle.get_text()
         self.clear_figure()
+        self.fig.suptitle(title, x=0.95, ha='right')
         offset = 40
         self.ax.patch.set_visible(False)
 
