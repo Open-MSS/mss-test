@@ -139,10 +139,7 @@ class ViewPlotter:
                 title += f"\nValid: {valid_time}"
 
         # Set title.
-        # title = self.fig._suptitle.get_text()
-        print(self.fig._suptitle)
         self.ax.set_title(title, horizontalalignment='left', x=0)
-        # self.fig.suptitle(f"{title}", x=0.95, ha='right')
 
     def get_plot_size_in_px(self):
         """Determines the size of the current figure in pixels.

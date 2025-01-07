@@ -150,9 +150,9 @@ class MapCanvas(basemap.Basemap):
 
         # Print project name and CRS identifier into figure.
         if not hasattr(self, "_info_text"):
-            self._info_text = self.ax.figure.suptitle("", x=0.95, ha='right')
+            self._info_text = self.ax.figure.text(0, 0, "")
             self._infos = [None] * 4
-        self.update_info_text(name=self.operation_name, crs=self.crs)
+        self.update_info_text(crs=self.crs)
 
         if self.appearance["draw_graticule"]:
             pass
