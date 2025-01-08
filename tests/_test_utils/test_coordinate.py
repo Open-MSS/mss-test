@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
     tests._test_utils.test_coordinate
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -103,12 +102,14 @@ class TestAngles:
         ([0, 0], 180, (0.0, 0.0)),
         ([1, 0], 0, (1.0, 0.0)),
         ([100, 90], 90, (-90.0, 100.0)),
+        ([1.5, 0.5], 90, (-0.5, 1.5)),  
+        ([0.0, 2.5], 45, (-1.7677669529663689, 1.7677669529663689)),  
     ])
     def test_rotate_point(self, point, angle, rotated_point):
         """
         Test rotating points around the origin.
         """
-        assert coordinate.rotate_point(point, angle) == rotated_point
+        assert coordinate.rotate_point(point, angle) == pytest.approx(rotated_point)
 
 
 class TestLatLonPoints:
