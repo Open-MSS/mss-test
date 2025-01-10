@@ -151,7 +151,7 @@ class MapCanvas(basemap.Basemap):
         # Print project name and CRS identifier into figure.
         if not hasattr(self, "_info_text"):
             self._info_text = self.ax.figure.text(0, 0, "")
-            self._infos = [None] * 4
+            self._infos = [None] * 3
         self.update_info_text(crs=self.crs)
 
         if self.appearance["draw_graticule"]:
@@ -170,15 +170,13 @@ class MapCanvas(basemap.Basemap):
             self.airspaces = None
             self.airspacetext = None
 
-    def update_info_text(self, openaip=None, ourairports=None, name=None, crs=None):
+    def update_info_text(self, openaip=None, ourairports=None, crs=None):
         if openaip is not None:
             self._infos[0] = openaip
         if ourairports is not None:
             self._infos[1] = ourairports
-        if name is not None:
-            self._infos[2] = name
         if crs is not None:
-            self._infos[3] = crs
+            self._infos[2] = crs
         self._info_text.set_text(
             "\n".join([_i for _i in self._infos if _i]))  # both None and ""
 
