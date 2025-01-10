@@ -464,7 +464,6 @@ class FileManager:
             return False
         # Get only named versions
         if named_version:
-            # the default of version_name is None and e.g. adding waypoints stores it as "None"
             changes = Change.query\
                 .filter(Change.op_id == op_id)\
                 .filter(~Change.version_name.is_(None))\
