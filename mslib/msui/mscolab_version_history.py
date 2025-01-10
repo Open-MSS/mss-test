@@ -149,8 +149,7 @@ class MSColabVersionHistory(QtWidgets.QMainWindow, ui.Ui_MscolabVersionHistory):
                     date = local_time.strftime('%d/%m/%Y')
                     time = local_time.strftime('%I:%M %p')
                     item_text = f'{change["username"]} made change on {date} at {time}'
-                    # default is None, but adding waypoints uses str(None)
-                    if str(change["version_name"]) != 'None':
+                    if change["version_name"] is not None:
                         item_text = f'{change["version_name"]}\n{item_text}'
                     item = QtWidgets.QListWidgetItem(item_text, parent=self.changes)
                     item.id = change["id"]
