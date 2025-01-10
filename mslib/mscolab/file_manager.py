@@ -467,7 +467,7 @@ class FileManager:
             # the default of version_name is None and e.g. adding waypoints stores it as "None"
             changes = Change.query\
                 .filter(Change.op_id == op_id)\
-                .filter(str(Change.version_name) != "None")\
+                .filter(~Change.version_name.is_(None))\
                 .order_by(Change.created_at.desc())\
                 .all()
         # Get all changes
