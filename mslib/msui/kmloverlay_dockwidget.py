@@ -601,8 +601,13 @@ class KMLOverlayControlWidget(QtWidgets.QWidget, ui.Ui_KMLOverlayDockWidget):
                     for index in checked_files:  # index is the indices of checked files
                         _dirname, _name = os.path.split(self.listWidget.item(index).text())
                         _fs = fs.open_fs(_dirname)
+                        # Create a secure XML Parser
+                        secure_parser = et.XMLParser(resolve_entities=False, no_network=True)
+                        # resolve_entities False, prevents entity expansion
+                        # no_network, prevents automatically loading remote documents
+                        # https://gist.github.com/jack-om/f2c762f399e6ee652f05320921ece4c9
                         with _fs.open(_name, 'r') as kmlf:
-                            tree = et.parse(kmlf)  # parse kml file
+                            tree = et.parse(kmlf, parser=secure_parser)  # nosec parse KML file using the secured parser
                             root = tree.getroot()  # get the root of the file
                             self.remove_ns(root)  # removes <kml> and </kml>
                             element.append(copy.deepcopy(root[0]))

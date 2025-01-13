@@ -88,7 +88,7 @@ def setup_logging(args):
 # ToDo likely this can be removed in python 3 because that uses unicode
 # modified Version from minidom, https://github.com/python/cpython/blob/2.7/Lib/xml/dom/minidom.py
 # MSS needed to change all writings as unicode not str
-from xml.dom.minidom import _write_data, Node  # nosec
+from xml.dom.minidom import _write_data, Node
 # Copyright © 2001-2018 Python Software Foundation. All rights reserved.
 # Copyright © 2000 BeOpen.com. All rights reserved.
 
@@ -103,11 +103,12 @@ def writexml(self, writer, indent="", addindent="", newl=""):
 
     for a_name in sorted(attrs.keys()):
         writer.write(" %s=\"" % a_name)
-        _write_data(writer, attrs[a_name].value)
+        _write_data(writer, attrs[a_name].value)  # nosec We take care of writing correct xml
         writer.write("\"")
     if self.childNodes:
         writer.write(">")
         if (len(self.childNodes) == 1 and self.childNodes[0].nodeType == Node.TEXT_NODE):
+            # nosec, we take care of writing correct xml
             self.childNodes[0].writexml(writer, '', '', '')
         else:
             writer.write(newl)

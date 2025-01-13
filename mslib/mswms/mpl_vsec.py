@@ -33,7 +33,7 @@ import io
 import logging
 import numpy as np
 from abc import abstractmethod
-from xml.dom.minidom import getDOMImplementation  # nosec
+from xml.dom.minidom import getDOMImplementation
 import matplotlib as mpl
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import mpl_toolkits.axes_grid1
@@ -285,7 +285,7 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
         # =========================================================================
         elif mime_type == "text/xml":
 
-            impl = getDOMImplementation()
+            impl = getDOMImplementation()  # nosec This is used to create and write a new XML document
             xmldoc = impl.createDocument(None, "MSS_VerticalSection_Data", None)
 
             # Title of this section.
