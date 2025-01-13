@@ -285,7 +285,7 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
         # =========================================================================
         elif mime_type == "text/xml":
 
-            impl = getDOMImplementation()  # nosec This is used to create and write a new XML document
+            impl = getDOMImplementation()  # nosec, this is used to create and write a new XML document
             xmldoc = impl.createDocument(None, "MSS_VerticalSection_Data", None)
 
             # Title of this section.

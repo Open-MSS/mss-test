@@ -92,7 +92,7 @@ class AbstractLinearSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
         # Derive additional data fields and make the plot.
         self._prepare_datafields()
 
-        impl = getDOMImplementation()  # nosec This is used to create and write a new XML document
+        impl = getDOMImplementation()  # nosec, this is used to create and write a new XML document
         xmldoc = impl.createDocument(None, "MSS_LinearSection_Data", None)
 
         # Title of this section.

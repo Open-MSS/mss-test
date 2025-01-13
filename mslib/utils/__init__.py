@@ -103,12 +103,12 @@ def writexml(self, writer, indent="", addindent="", newl=""):
 
     for a_name in sorted(attrs.keys()):
         writer.write(" %s=\"" % a_name)
-        _write_data(writer, attrs[a_name].value)  # nosec We take care of writing correct xml
+        _write_data(writer, attrs[a_name].value)  # nosec, we take care of writing correct XML
         writer.write("\"")
     if self.childNodes:
         writer.write(">")
         if (len(self.childNodes) == 1 and self.childNodes[0].nodeType == Node.TEXT_NODE):
-            # nosec, we take care of writing correct xml
+            # nosec, we take care of writing correct XML
             self.childNodes[0].writexml(writer, '', '', '')
         else:
             writer.write(newl)

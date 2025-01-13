@@ -56,7 +56,7 @@ from mslib.utils.qt import variant_to_string, variant_to_float
 from mslib.msui.performance_settings import DEFAULT_PERFORMANCE
 
 from mslib.utils import writexml
-xml.dom.minidom.Element.writexml = writexml  # nosec We take care of writing correct xml
+xml.dom.minidom.Element.writexml = writexml  # nosec, we take care of writing correct XML
 # Constants for identifying the table columns when the WaypointsTableModel is
 # used with a QTableWidget.
 LOCATION, LAT, LON, FLIGHTLEVEL, PRESSURE = list(range(5))
@@ -616,7 +616,7 @@ class WaypointsTableModel(QtCore.QAbstractTableModel):
         file_dir.close()
 
     def get_xml_doc(self):
-        doc = xml.dom.minidom.Document()  # nosec We take care of writing correct xml
+        doc = xml.dom.minidom.Document()  # nosec, we take care of writing correct XML
         ft_el = doc.createElement("FlightTrack")
         ft_el.setAttribute("version", __version__)
         doc.appendChild(ft_el)
