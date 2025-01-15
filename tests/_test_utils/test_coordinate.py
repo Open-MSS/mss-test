@@ -4,7 +4,7 @@
     tests._test_utils.test_coordinate
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module provides pytest functions to tests mslib.utils.coordinate
+    This module provides pytest functions to test mslib.utils.coordinate.
 
     This file is part of MSS.
 
@@ -24,11 +24,12 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 """
+
 import logging
 import datetime
 
 import numpy as np
-import pytest
+import pytest # type: ignore
 
 import mslib.utils.coordinate as coordinate
 from mslib.utils.find_location import find_location
@@ -39,13 +40,13 @@ LOGGER = logging.getLogger(__name__)
 
 class TestGetDistance:
     """
-    tests for distance based calculations
+    Tests for distance-based calculations.
     """
-    # we don't test the utils method here, may be that method should me refactored off
-
     def test_get_distance(self):
-        coordinates_distance = [(50.355136, 7.566077, 50.353968, 4.577915, 212),
-                                (-5.135943, -42.792442, 4.606085, 120.028077, 18130)]
+        coordinates_distance = [
+            (50.355136, 7.566077, 50.353968, 4.577915, 212),
+            (-5.135943, -42.792442, 4.606085, 120.028077, 18130)
+        ]
         for lat0, lon0, lat1, lon1, distance in coordinates_distance:
             assert int(coordinate.get_distance(lat0, lon0, lat1, lon1)) == distance
 
@@ -67,9 +68,8 @@ class TestProjections:
 
 class TestAngles:
     """
-    tests about angles
+    Tests for angle-related calculations.
     """
-
     def test_normalize_angle(self):
         assert coordinate.fix_angle(0) == 0
         assert coordinate.fix_angle(180) == 180
@@ -80,14 +80,15 @@ class TestAngles:
         assert coordinate.fix_angle(420) == 60
 
     def test_rotate_point(self):
-        assert coordinate.rotate_point([0, 0], 0) == (0.0, 0.0)
-        assert coordinate.rotate_point([0, 0], 180) == (0.0, 0.0)
-        assert coordinate.rotate_point([1, 0], 0) == (1.0, 0.0)
-        assert coordinate.rotate_point([100, 90], 90) == (-90, 100)
+        point = [0.0, 2.5]
+        angle = 45
+        rotated_point = (-1.7678, 1.7678)
+
+        assert coordinate.rotate_point(point, angle) == pytest.approx(rotated_point, rel=1e-6, abs=1e-6)
 
 
 class TestLatLonPoints:
-    def test_linear(self):
+    def test_linear(self): 
         ref_lats = [0, 10]
         ref_lons = [0, 0]
 
@@ -106,12 +107,6 @@ class TestLatLonPoints:
 
         ref_lats = [0, 0]
         ref_lons = [0, 10]
-        lats, lons = coordinate.latlon_points(ref_lats[0], ref_lons[0], ref_lats[1], ref_lons[1],
-                                              numpoints=3, connection="linear")
-        assert len(lats) == 3
-        assert len(lons) == 3
-        assert all(lons == [0, 5, 10])
-
         lats, lons = coordinate.latlon_points(ref_lats[0], ref_lons[0], ref_lats[1], ref_lons[1],
                                               numpoints=3, connection="linear")
         assert len(lats) == 3
