@@ -4,10 +4,10 @@
     mslib.utils.auth
     ~~~~~~~~~~~~~~~~
 
-    handles passwords from the keyring for login and http_auuth
+    handles passwords from the keyring for login and http_auth
 
 
-    To better understand of the code, look at the 'ships' example from
+    To better understand the code, look at the 'ships' example from
     chapter 14/16 of 'Rapid GUI Programming with Python and Qt: The
     Definitive Guide to PyQt Programming' (Mark Summerfield).
 
@@ -39,7 +39,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     class DBusErrorResponse(Exception):
         """
-        Fallback definition on not DBus systems
+        Fallback definition on non-DBus systems
         """
         def __init__(self, message):
             super().__init__(message)
@@ -64,20 +64,18 @@ def del_password_from_keyring(service_name=NAME, username=""):
 def get_password_from_keyring(service_name=NAME, username=""):
     """
     When we request a username we use this function to fill in a form field with a password
-    In this case by none existing credentials in the keyring we have to return an empty string
+    In this case by non-existing credentials in the keyring we have to return an empty string
     """
     if username.strip() != "":
         try:
             cred = keyring.get_credential(service_name=service_name, username=username)
-            if username is not None and cred is None:
-                return ""
-            elif cred is None:
-                return None
+            if cred is None:
+                return ""  # Return empty string instead of None
             else:
                 return cred.password
         except (keyring.errors.KeyringLocked, keyring.errors.InitError, DBusErrorResponse) as ex:
             logging.warning(ex)
-            return None
+            return ""  # Return empty string if an error occurs
 
 
 def save_password_to_keyring(service_name=NAME, username="", password=""):
@@ -100,14 +98,21 @@ def get_auth_from_url_and_name(server_url, http_auth, overwrite_login_cache=True
         if server_url == url:
             try:
                 password = get_password_from_keyring(service_name=url, username=auth_name)
+                if password is None:
+                    password = ""  # Ensure password is a string
             except keyring.errors.NoKeyringError as ex:
-                password = None
+                password = ""
                 logging.info("Can't use Keyring on your system: %s" % ex)
-            if overwrite_login_cache and password is not None and password.strip() != "":
+
+            if overwrite_login_cache and password.strip() != "":
                 constants.AUTH_LOGIN_CACHE[server_url] = (auth_name, password)
+
             name = auth_name
             break
+
     if name == "":
         name = None
-    auth = constants.AUTH_LOGIN_CACHE.get(server_url, (name, None))
+
+    # Always return a valid string for the password
+    auth = constants.AUTH_LOGIN_CACHE.get(server_url, (name, ""))
     return auth
