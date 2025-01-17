@@ -248,9 +248,9 @@ def check_login(emailid, password):
     return False
 
 
-def register_user(email, password, username):
-    if len(str(email.strip())) == 0 or len(str(username.strip())) == 0:
-        return {"success": False, "message": "Your username or email cannot be empty"}
+def register_user(email, password, username, fullname):
+    if len(str(email.strip())) == 0 or len(str(username.strip())) == 0 or len(str(fullname.strip())) == 0 :
+        return {"success": False, "message": "Your username, fullname or email cannot be empty"}
     is_valid_username = True if username.find("@") == -1 else False
     is_valid_email = validate_email(email)
     if not is_valid_email:
@@ -263,10 +263,9 @@ def register_user(email, password, username):
     user_exists = User.query.filter_by(username=str(username)).first()
     if user_exists:
         return {"success": False, "message": "This username is already registered"}
-    user = User(email, username, password)
+    user = User(email, username, password, fullname)
     result = fm.modify_user(user, action="create")
     return {"success": result}
-
 
 def verify_user(func):
     @functools.wraps(func)
@@ -405,7 +404,8 @@ def user_register_handler():
     email = request.form['email']
     password = request.form['password']
     username = request.form['username']
-    result = register_user(email, password, username)
+    fullname = request.form['fullname']
+    result = register_user(email, password, username, fullname)
     status_code = 200
     try:
         if result["success"]:
@@ -614,6 +614,37 @@ def set_version_name():
         return jsonify({"success": False, "message": "Some error occurred!"})
 
     return jsonify({"success": True, "message": "Successfully set version name"})
+
+
+@APP.route("/edit_user_info", methods=["POST"])
+@verify_user
+def edit_user_info():
+    user = g.user
+    fullname = request.form.get("fullname")
+
+    try:
+        # Update the user's full name in the database
+        user_record = User.query.filter_by(id=int(user.id)).first()
+        if user_record is None:
+            return jsonify({"success": False, "error": "User not found."}), 404
+
+        # Update the full name
+        user_record.fullname = fullname  # Update full name
+
+        # Commit changes to the database
+        _handle_db_upgrade().session.commit() 
+        return jsonify({
+            "success": True,
+            "fullname": user_record.fullname  # Return the updated full name
+        }), 200
+
+    except Exception as e:
+        logging.debug(f"Error updating user info: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to update user info"
+        }), 500
+        
 
 
 @APP.route('/authorized_users', methods=['GET'])
@@ -1027,3 +1058,4 @@ application = socketio.WSGIApp(sockio)
 
 if __name__ == '__main__':
     main()
+
