@@ -29,6 +29,7 @@
 import mock
 import argparse
 import pytest
+import logging
 from mslib.mswms import mswms
 
 
@@ -49,7 +50,7 @@ def test_main():
 
     with mock.patch("mslib.mswms.mswms.argparse.ArgumentParser.parse_args",
                     return_value=argparse.Namespace(plot_types=None, version=False, update=False, gallery=False,
-                                                    debug=False, logfile=None, action=None,
+                                                    loglevel=logging.INFO, logfile=None, action=None,
                                                     host=None, port=None)):
         mswms.main()
     assert pytest_wrapped_e.typename == "SystemExit"

@@ -26,7 +26,7 @@
 """
 # style definitions should be put in mpl_lsec_styles.py
 
-import logging
+
 from xml.dom.minidom import getDOMImplementation
 import matplotlib as mpl
 from pint import Quantity
@@ -34,6 +34,7 @@ from pint import Quantity
 from mslib.mswms import mss_2D_sections
 from mslib.utils.units import convert_to
 from mslib.utils.loggerdef import configure_mpl_logger
+from mslib.utils import LOGGER
 
 mpl.rcParams['xtick.direction'] = 'out'
 mpl.rcParams['ytick.direction'] = 'out'
@@ -80,7 +81,7 @@ class AbstractLinearSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
                 data[dataitem] = convert_to(data[dataitem], origunit, dataunit)
                 self.data_units[dataitem] = dataunit
             else:
-                logging.debug("Please add units to plot variables")
+                LOGGER.debug("Please add units to plot variables")
 
         # Copy parameters to properties.
         self.data = data

@@ -30,9 +30,8 @@ import logging
 import sys
 
 from mslib import __version__
-from mslib.utils import setup_logging
+from mslib.utils import setup_logging, LOGGER
 from mslib.mswms.wms import app as application
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -41,7 +40,7 @@ def main():
                         default="127.0.0.1", dest="host")
     parser.add_argument("--port", help="port", dest="port", default="8081")
     parser.add_argument("--threadpool", help="threadpool", dest="use_threadpool", action="store_true", default=False)
-    parser.add_argument("--debug", help="show debugging log messages on console", action="store_true", default=False)
+    parser.add_argument("--loglevel", help="set logging level", dest="loglevel", default=logging.INFO)
     parser.add_argument("--logfile", help="If set to a name log output goes to that file", dest="logfile",
                         default=None)
 
@@ -85,7 +84,7 @@ def main():
         print("Version:", __version__)
         sys.exit()
 
-    setup_logging(args)
+    setup_logging(logfile=args.logfile, levelno= int(args.loglevel))
 
     # keep the import after the version check. This creates all layers.
     from mslib.mswms.wms import mswms_settings, server
@@ -99,10 +98,10 @@ def main():
         clear = args.clear or args.refresh
         server.generate_gallery(create, clear, args.show_code, url_prefix=args.url_prefix, levels=args.levels,
                                 itimes=args.itimes, vtimes=args.vtimes, plot_types=plot_types)
-        logging.info("Gallery generation done.")
+        LOGGER.info("Gallery generation done.")
         sys.exit()
 
-    logging.info("Configuration File: '%s'", mswms_settings.__file__)
+    LOGGER.info("Configuration File: '%s'", mswms_settings.__file__)
 
     application.run(args.host, args.port)
 

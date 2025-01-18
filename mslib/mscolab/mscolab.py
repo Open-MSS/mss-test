@@ -50,7 +50,7 @@ from mslib.utils import setup_logging
 def handle_start(args=None):
     from mslib.mscolab.server import APP, sockio, cm, fm, start_server
     if args is not None:
-        setup_logging(args)
+        setup_logging(levelno = args.loglevel, logfile= args.logfile)
     logging.info("MSS Version: %s", __version__)
     logging.info("Python Version: %s", sys.version)
     logging.info("Platform: %s (%s)", platform.platform(), platform.architecture())
@@ -362,8 +362,7 @@ def main():
     subparsers = parser.add_subparsers(help='Available actions', dest='action')
 
     server_parser = subparsers.add_parser("start", help="Start the mscolab server")
-    server_parser.add_argument("--debug", help="show debugging log messages on console", action="store_true",
-                               default=False)
+    server_parser.add_argument("--loglevel", help="set logging level", dest="loglevel", default=int(logging.INFO))
     server_parser.add_argument("--logfile", help="If set to a name log output goes to that file", dest="logfile",
                                default=None)
 

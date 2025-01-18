@@ -24,12 +24,12 @@
     limitations under the License.
 """
 
-import logging
 import numpy as np
 import matplotlib
 
 from mslib.utils.units import convert_to
 from mslib.utils.loggerdef import configure_mpl_logger
+from mslib.utils import LOGGER
 
 """
 Number of levels in discrete colourmaps
@@ -608,14 +608,14 @@ def get_style_parameters(dataname, style, cmin, cmax, data):
         cmin, cmax, clev, cmap, norm, ticks = \
             STYLES[style](dataname, style, cmin, cmax, cmap, data)
     except KeyError:
-        logging.error("Unknown plotting style '%s' for dataname '%s'", style, dataname)
+        LOGGER.error("Unknown plotting style '%s' for dataname '%s'", style, dataname)
         raise
     except (ValueError, TypeError):
-        logging.error("Illegal number of arguments/return values for plotting style '%s' "
+        LOGGER.error("Illegal number of arguments/return values for plotting style '%s' "
                       "and dataname '%s'", style, dataname)
         raise
     except BaseException:
-        logging.error("Unknown error in style call: plotting style '%s' "
+        LOGGER.error("Unknown error in style call: plotting style '%s' "
                       "and dataname '%s'", style, dataname)
         raise
     if clev[0] == clev[-1]:

@@ -63,7 +63,6 @@
     limitations under the License.
 """
 
-import logging
 import warnings
 
 import numpy as np
@@ -76,7 +75,7 @@ from matplotlib import patheffects
 from mslib.mswms.mpl_hsec import MPLBasemapHorizontalSectionStyle
 from mslib.mswms.utils import make_cbar_labels_readable
 import mslib.mswms.generics as generics
-from mslib.utils import thermolib
+from mslib.utils import thermolib, LOGGER
 from mslib.utils.units import convert_to
 
 
@@ -1530,7 +1529,7 @@ class HS_Meteosat_BT108_01(MPLBasemapHorizontalSectionStyle):
 
         tempC = data["msg_brightness_temperature_108"]
 
-        logging.debug("Min: %.2f K, Max: %.2f K", tempC.min(), tempC.max())
+        LOGGER.debug("Min: %.2f K, Max: %.2f K", tempC.min(), tempC.max())
 
         tc = bm.contourf(self.lonmesh, self.latmesh, tempC,
                          np.arange(cmin, cmax, 2), cmap=plt.cm.gray_r, extend="both")

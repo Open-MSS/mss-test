@@ -28,14 +28,15 @@
 import os
 from PIL import Image
 import io
-import logging
 from matplotlib import pyplot as plt
 import defusedxml.ElementTree as etree
 import inspect
 from mslib.mswms.mpl_vsec import AbstractVerticalSectionStyle
 from mslib.mswms.mpl_lsec import AbstractLinearSectionStyle
+from mslib.utils import LOGGER
 
 STATIC_LOCATION = ""
+
 try:
     import mswms_settings
     if hasattr(mswms_settings, "_gallerypath"):
@@ -43,7 +44,7 @@ try:
     else:
         STATIC_LOCATION = os.path.join(os.path.dirname(os.path.abspath(mswms_settings.__file__)), "gallery")
 except ImportError as e:
-    logging.warning("%s. Can't generate gallery.", e)
+    LOGGER.warning("%s. Can't generate gallery.", e)
 
 DOCS_LOCATION = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "gallery")
 
@@ -457,7 +458,7 @@ def write_html(path, sphinx=False, plot_types=None):
 
     with open(os.path.join(path, "plots.html"), "w+") as file:
         file.write(html + end)
-        logging.info("plots.html created at %s", os.path.join(path, 'plots.html'))
+        LOGGER.info("plots.html created at %s", os.path.join(path, 'plots.html'))
 
 
 def import_instructions(plot_object, l_type, layer, native_import=None, dataset=""):

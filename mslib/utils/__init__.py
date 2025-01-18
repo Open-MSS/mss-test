@@ -48,41 +48,68 @@ class FatalUserError(Exception):
     def __init__(self, error_string):
         logging.debug("%s", error_string)
 
+LOGGER = logging.getLogger(__name__)
 
-def setup_logging(args):
-    logger = logging.getLogger()
+class CustomFormatter(logging.Formatter):
+    """Logging colored formatter, adapted from https://stackoverflow.com/a/56944256/3638629"""
+    grey = '\x1b[38;21m'
+    blue = '\x1b[38;5;39m'
+    yellow = '\x1b[38;5;226m'
+    red = '\x1b[38;5;196m'
+    bold_red = '\x1b[31;1m'
+    reset = '\x1b[0m'
+
+    def __init__(self, fmt):
+        super().__init__()
+        self.fmt = fmt
+        self.FORMATS = {
+            logging.DEBUG: self.grey + self.fmt + self.reset,
+            logging.INFO: self.blue + self.fmt + self.reset,
+            logging.WARNING: self.yellow + self.fmt + self.reset,
+            logging.ERROR: self.red + self.fmt + self.reset,
+            logging.CRITICAL: self.bold_red + self.fmt + self.reset
+        }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+def setup_logging(levelno=logging.INFO, logfile=None):
+    LOGGER = logging.getLogger(__name__)
     # this is necessary as "someone" has already initialized logging, preventing basicConfig from doing stuff
-    for ch in logger.handlers:
-        logger.removeHandler(ch)
+    for ch in LOGGER.handlers:
+        LOGGER.removeHandler(ch)
 
-    debug_formatter = logging.Formatter("%(asctime)s (%(module)s.%(funcName)s:%(lineno)s): %(levelname)s: %(message)s")
-    default_formatter = logging.Formatter("%(levelname)s: %(message)s")
+    debug_formatter = CustomFormatter("%(asctime)s (%(module)s.%(funcName)s:%(lineno)s): %(levelname)s: %(message)s")
+    default_formatter = CustomFormatter("%(levelname)s: %(message)s")
 
     # Console handler (suppress DEBUG by default)
     ch = logging.StreamHandler()
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-        ch.setLevel(logging.DEBUG)
+    if levelno != logging.INFO:
+        LOGGER.setLevel(levelno)
+        ch.setLevel(levelno)
         ch.setFormatter(debug_formatter)
     else:
-        logger.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.INFO)
         ch.setLevel(logging.INFO)
         ch.setFormatter(default_formatter)
-    logger.addHandler(ch)
+    LOGGER.addHandler(ch)
+    LOGGER.propagate = False
     # File handler (always on DEBUG level)
     # TODO: Change this to write to a rotating log handler (so that the file size
     # is kept constant). (mr, 2011-02-25)
-    if args.logfile:
-        logfile = args.logfile
+    if logfile:
+        logfile = logfile
         try:
             fh = logging.FileHandler(logfile, "w")
         except (OSError, IOError) as ex:
-            logger.error("Could not open logfile '%s': %s %s", logfile, type(ex), ex)
+            LOGGER.error("Could not open logfile '%s': %s %s", logfile, type(ex), ex)
         else:
-            logger.setLevel(logging.DEBUG)
+            LOGGER.setLevel(logging.DEBUG)
             fh.setLevel(logging.DEBUG)
-            fh.setFormatter(debug_formatter)
-            logger.addHandler(fh)
+            fh.setFormatter(CustomFormatter(debug_formatter))
+            LOGGER.addHandler(fh)
 
 
 # ToDo likely this can be removed in python 3 because that uses unicode

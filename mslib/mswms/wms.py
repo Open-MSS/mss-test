@@ -45,7 +45,6 @@ import glob
 import os
 import io
 import inspect
-import logging
 import shutil
 import tempfile
 import traceback
@@ -66,6 +65,7 @@ from mslib.utils.time import parse_iso_datetime
 from mslib.index import create_app
 from mslib.mswms.gallery_builder import add_image, write_html, add_levels, add_times, \
     write_doc_index, write_code_pages, STATIC_LOCATION, DOCS_LOCATION
+from mslib.utils import LOGGER, setup_logging
 
 # Flask basic auth's documentation
 # https://flask-basicauth.readthedocs.io/en/latest/#flask.ext.basicauth.BasicAuth.check_credentials
@@ -100,12 +100,13 @@ class default_mswms_settings:
 
 
 mswms_settings = default_mswms_settings()
+setup_logging()
 
 try:
     import mswms_settings as user_settings
     mswms_settings.__dict__.update(user_settings.__dict__)
 except ImportError as ex:
-    logging.warning("Couldn't import mswms_settings (ImportError:'%s'), Using dummy config.", ex)
+    LOGGER.warning("Couldn't import mswms_settings (ImportError:'%s'), Using dummy config.", ex)
 
 app = create_app(__name__, imprint=mswms_settings.imprint, gdpr=mswms_settings.gdpr)
 auth = HTTPBasicAuth()
@@ -116,7 +117,7 @@ app.config['realm'] = realm
 try:
     import mswms_auth
 except ImportError as ex:
-    logging.warning("Couldn't import mswms_auth (ImportError:'{%s), creating dummy config.", ex)
+    LOGGER.warning("Couldn't import mswms_auth (ImportError:'{%s), creating dummy config.", ex)
 
     class mswms_auth:
         allowed_users = [("mswms", "add_md5_digest_of_PASSWORD_here"),
@@ -124,7 +125,7 @@ except ImportError as ex:
         __file__ = None
 
 if mswms_settings.enable_basic_http_authentication:
-    logging.debug("Enabling basic HTTP authentication. Username and "
+    LOGGER.debug("Enabling basic HTTP authentication. Username and "
                   "password required to access the service.")
     import hashlib
 
@@ -145,10 +146,6 @@ if mswms_settings.enable_basic_http_authentication:
 from mslib.mswms import mss_plot_driver
 from mslib.utils.get_projection_params import get_projection_params
 
-# Logging the Standard Output, which will be added to the Apache Log Files
-logging.basicConfig(level=logging.DEBUG,
-                    format="%(asctime)s %(funcName)19s || %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S")
 
 # Chameleon XMl template
 templates = PageTemplateLoader(mswms_settings.xml_template_location)
@@ -211,7 +208,7 @@ class WMSServer:
 
         self.lsec_layer_registry = {}
         if not hasattr(mswms_settings, "register_linear_layers"):
-            logging.info("Since 4.0.0 MSS has support for linear layers in the mswms_settings.py.\n"
+            LOGGER.info("Since 4.0.0 MSS has support for linear layers in the mswms_settings.py.\n"
                          "Look at the documentation for an example "
                          "https://mss.readthedocs.io/en/stable/deployment.html#configuration-file-of-the-wms-server")
             mswms_settings.register_linear_layers = []
@@ -287,7 +284,7 @@ class WMSServer:
 
                             for itime in sorted(init_times):
                                 if itime and plot_driver.get_init_times() and itime not in plot_driver.get_init_times():
-                                    logging.warning("Requested itime %s not present for "
+                                    LOGGER.warning("Requested itime %s not present for "
                                                     "%s %s! itimes present: "
                                                     "%s", itime, dataset, plot_object.name, plot_driver.get_init_times()
                                                     )
@@ -301,7 +298,7 @@ class WMSServer:
                                                                            file_type, itime)
                                 except IndexError:
                                     # ToDo fix demodata for sfc
-                                    logging.debug("plot_object.required_datafields incomplete"
+                                    LOGGER.debug("plot_object.required_datafields incomplete"
                                                   " for filetype: %s in dataset: %s for l_type: %s",
                                                   file_type, dataset, l_type)
                                     continue
@@ -314,7 +311,7 @@ class WMSServer:
 
                                 for vtime in sorted(valid_times):
                                     if vtime and i_vtimes and vtime not in i_vtimes:
-                                        logging.warning("Requested vtime %s at %s not present for "
+                                        LOGGER.warning("Requested vtime %s at %s not present for "
                                                         "%s %s! vtimes present: %s", vtime, itime, dataset,
                                                         plot_object.name, i_vtimes)
                                         continue
@@ -378,7 +375,7 @@ class WMSServer:
                                         for level in sorted(rendered_levels):
                                             if level and elevations and level \
                                                     not in [float(elev) for elev in elevations]:
-                                                logging.warning("Requested level %s not present for "
+                                                LOGGER.warning("Requested level %s not present for "
                                                                 "%s %s! Levels present: "
                                                                 "%s", level, dataset, plot_object.name, elevations)
                                                 continue
@@ -420,7 +417,7 @@ class WMSServer:
 
                         except Exception as e:
                             traceback.print_exc()
-                            logging.error("%s %s %s", plot_object.name, type(e), e)
+                            LOGGER.error("%s %s %s", plot_object.name, type(e), e)
 
             write_html(tmp_path, sphinx, plot_types=plot_types)
             if generate_code:
@@ -462,9 +459,9 @@ class WMSServer:
             try:
                 layer = layer_class(self.hsec_drivers[dataset])
             except KeyError as ex:
-                logging.debug("ERROR: %s %s", type(ex), ex)
+                LOGGER.debug("ERROR: %s %s", type(ex), ex)
                 continue
-            logging.debug("registering horizontal section layer '%s' with dataset '%s'", layer.name, dataset)
+            LOGGER.debug("registering horizontal section layer '%s' with dataset '%s'", layer.name, dataset)
             # Check if the current dataset has already been registered. If
             # not, check whether a suitable driver is available.
             if dataset not in self.hsec_layer_registry:
@@ -493,9 +490,9 @@ class WMSServer:
             try:
                 layer = layer_class(self.vsec_drivers[dataset])
             except KeyError as ex:
-                logging.debug("ERROR: %s %s", type(ex), ex)
+                LOGGER.debug("ERROR: %s %s", type(ex), ex)
                 continue
-            logging.debug("registering vertical section layer '%s' with dataset '%s'", layer.name, dataset)
+            LOGGER.debug("registering vertical section layer '%s' with dataset '%s'", layer.name, dataset)
             # Check if the current dataset has already been registered. If
             # not, check whether a suitable driver is available.
             if dataset not in self.vsec_layer_registry:
@@ -527,9 +524,9 @@ class WMSServer:
                 else:
                     layer = layer_class(self.lsec_drivers[dataset])
             except KeyError as ex:
-                logging.debug("ERROR: %s %s", type(ex), ex)
+                LOGGER.debug("ERROR: %s %s", type(ex), ex)
                 continue
-            logging.debug("registering linear section layer '%s' with dataset '%s'", layer.name, dataset)
+            LOGGER.debug("registering linear section layer '%s' with dataset '%s'", layer.name, dataset)
             # Check if the current dataset has already been registered. If
             # not, check whether a suitable driver is available.
             if dataset not in self.lsec_layer_registry:
@@ -555,7 +552,7 @@ class WMSServer:
         """
         if code is not None and code == "InvalidSRS" and version == "1.3.0":
             code = "InvalidCRS"
-        logging.error("creating service exception code='%s' text='%s'.", code, text)
+        LOGGER.error("creating service exception code='%s' text='%s'.", code, text)
         template = templates['service_exception.pt' if version == "1.1.1" else "service_exception130.pt"]
         return template(code=code, text=text).encode("utf-8"), "text/xml"
 
@@ -583,17 +580,17 @@ class WMSServer:
                 version=version)
 
         template = templates['get_capabilities130.pt' if version == "1.3.0" else 'get_capabilities.pt']
-        logging.debug("server-url '%s'", server_url)
+        LOGGER.debug("server-url '%s'", server_url)
 
         # Horizontal Layers
         hsec_layers = []
         for dataset in self.hsec_layer_registry:
             for layer in self.hsec_layer_registry[dataset].values():
                 if layer.uses_inittime_dimension() and len(layer.get_init_times()) == 0:
-                    logging.error("layer %s/%s has no init times!", layer, dataset)
+                    LOGGER.error("layer %s/%s has no init times!", layer, dataset)
                     continue
                 if layer.uses_validtime_dimension() and len(layer.get_all_valid_times()) == 0:
-                    logging.error("layer %s/%s has no valid times!", layer, dataset)
+                    LOGGER.error("layer %s/%s has no valid times!", layer, dataset)
                     continue
                 hsec_layers.append((dataset, layer))
 
@@ -602,10 +599,10 @@ class WMSServer:
         for dataset in self.vsec_layer_registry:
             for layer in self.vsec_layer_registry[dataset].values():
                 if layer.uses_inittime_dimension() and len(layer.get_init_times()) == 0:
-                    logging.error("layer %s/%s has no init times!", layer, dataset)
+                    LOGGER.error("layer %s/%s has no init times!", layer, dataset)
                     continue
                 if layer.uses_validtime_dimension() and len(layer.get_all_valid_times()) == 0:
-                    logging.error("layer %s/%s has no valid times!", layer, dataset)
+                    LOGGER.error("layer %s/%s has no valid times!", layer, dataset)
                     continue
                 vsec_layers.append((dataset, layer))
 
@@ -614,10 +611,10 @@ class WMSServer:
         for dataset in self.lsec_layer_registry:
             for layer in self.lsec_layer_registry[dataset].values():
                 if layer.uses_inittime_dimension() and len(layer.get_init_times()) == 0:
-                    logging.error("layer %s/%s has no init times!", layer, dataset)
+                    LOGGER.error("layer %s/%s has no init times!", layer, dataset)
                     continue
                 if layer.uses_validtime_dimension() and len(layer.get_all_valid_times()) == 0:
-                    logging.error("layer %s/%s has no valid times!", layer, dataset)
+                    LOGGER.error("layer %s/%s has no valid times!", layer, dataset)
                     continue
                 lsec_layers.append((dataset, layer))
 
@@ -646,7 +643,7 @@ class WMSServer:
         the parameters specified in the URL.
 
         """
-        logging.debug("GetMap/GetVSec request. Interpreting parameters..")
+        LOGGER.debug("GetMap/GetVSec request. Interpreting parameters..")
 
         # Evaluate query parameters:
         # =============================
@@ -657,7 +654,7 @@ class WMSServer:
         width = query.get('WIDTH', 900)
         height = query.get('HEIGHT', 600)
         figsize = float(width if width != "" else 900), float(height if height != "" else 600)
-        logging.debug("  requested image size = %sx%s", figsize[0], figsize[1])
+        LOGGER.debug("  requested image size = %sx%s", figsize[0], figsize[1])
 
         # Requested layers.
         layers = [layer for layer in query.get('LAYERS', '').strip().split(',') if layer]
@@ -667,12 +664,12 @@ class WMSServer:
                 dataset, layer = layer.split(".")
             else:
                 dataset = None
-            logging.debug("  requested dataset = '%s', layer = '%s'", dataset, layer)
+            LOGGER.debug("  requested dataset = '%s', layer = '%s'", dataset, layer)
 
             # Requested style(s).
             styles = [style for style in query.get('STYLES', 'default').strip().split(',') if style]
             style = styles[index] if len(styles) > index else None
-            logging.debug("  requested style = '%s'", style)
+            LOGGER.debug("  requested style = '%s'", style)
 
             # Forecast initialisation time.
             init_time = query.get('DIM_INIT_TIME')
@@ -684,7 +681,7 @@ class WMSServer:
                         code="InvalidDimensionValue",
                         text="DIM_INIT_TIME has wrong format (needs to be 2005-08-29T13:00:00Z)",
                         version=version)
-            logging.debug("  requested initialisation time = '%s'", init_time)
+            LOGGER.debug("  requested initialisation time = '%s'", init_time)
 
             # Forecast valid time.
             valid_time = query.get('TIME')
@@ -696,7 +693,7 @@ class WMSServer:
                         code="InvalidDimensionValue",
                         text="TIME has wrong format (needs to be 2005-08-29T13:00:00Z)",
                         version=version)
-            logging.debug("  requested (valid) time = '%s'", valid_time)
+            LOGGER.debug("  requested (valid) time = '%s'", valid_time)
 
             # Coordinate reference system.
             crs = query.get("CRS" if version == "1.3.0" else "SRS", 'EPSG:4326').lower()
@@ -714,7 +711,7 @@ class WMSServer:
                 except ValueError:
                     return self.create_service_exception(
                         code="InvalidSRS", text=f"The requested CRS '{crs}' is not supported.", version=version)
-            logging.debug("  requested coordinate reference system = '%s'", crs)
+            LOGGER.debug("  requested coordinate reference system = '%s'", crs)
 
             # Create a frameless figure (WMS) or one with title and legend
             # (MSS specific)? Default is WMS mode (frameless).
@@ -725,11 +722,11 @@ class WMSServer:
             if not transparent and index > 0:
                 transparent = True
             if transparent:
-                logging.debug("  requested transparent image")
+                LOGGER.debug("  requested transparent image")
 
             # Return format (image/png, text/xml, etc.).
             mime_type = query.get('FORMAT', 'image/png').lower()
-            logging.debug("  requested return format = '%s'", mime_type)
+            LOGGER.debug("  requested return format = '%s'", mime_type)
             if mime_type not in ["image/png", "text/xml"]:
                 return self.create_service_exception(
                     code="InvalidFORMAT",
@@ -800,8 +797,8 @@ class WMSServer:
                                                     mime_type=mime_type)
                     images.append(plot_driver.plot())
                 except (IOError, ValueError) as ex:
-                    logging.error("ERROR: %s %s", type(ex), ex)
-                    logging.debug("%s", traceback.format_exc())
+                    LOGGER.error("ERROR: %s %s", type(ex), ex)
+                    LOGGER.debug("%s", traceback.format_exc())
                     msg = "The data corresponding to your request is not available. Please check the " \
                           "times and/or levels you have specified.\n\n" \
                           f"Error message: '{ex}'"
@@ -817,7 +814,7 @@ class WMSServer:
                     path = [[lat, lon] for lat, lon in zip(path[0::2], path[1::2])]
                 except ValueError:
                     return self.create_service_exception(text=f"Invalid PATH: {path}", version=version)
-                logging.debug("VSEC PATH: %s", path)
+                LOGGER.debug("VSEC PATH: %s", path)
 
                 # Check requested layers.
                 if (dataset not in self.vsec_layer_registry) or (layer not in self.vsec_layer_registry[dataset]):
@@ -864,7 +861,7 @@ class WMSServer:
                                                     mime_type=mime_type)
                     images.append(plot_driver.plot())
                 except (IOError, ValueError) as ex:
-                    logging.error("ERROR: %s %s", type(ex), ex)
+                    LOGGER.error("ERROR: %s %s", type(ex), ex)
                     msg = "The data corresponding to your request is not available. Please check the " \
                           "times and/or path you have specified.\n\n" \
                           f"Error message: {ex}.\n" \
@@ -887,7 +884,7 @@ class WMSServer:
                     path = [[lat, lon, alt] for lat, lon, alt in zip(path[0::3], path[1::3], path[2::3])]
                 except ValueError:
                     return self.create_service_exception(text=f"Invalid PATH: {path}", version=version)
-                logging.debug("LSEC PATH: %s", path)
+                LOGGER.debug("LSEC PATH: %s", path)
 
                 # Check requested layers.
                 if (dataset not in self.lsec_layer_registry) or (layer not in self.lsec_layer_registry[dataset]):
@@ -926,7 +923,7 @@ class WMSServer:
                                                     mime_type=mime_type)
                     images.append(plot_driver.plot())
                 except (IOError, ValueError) as ex:
-                    logging.error("ERROR: %s %s", type(ex), ex)
+                    LOGGER.error("ERROR: %s %s", type(ex), ex)
                     msg = "The data corresponding to your request is not available. Please check the " \
                           "times and/or path you have specified.\n\n" \
                           f"Error message: {ex}.\n" \
@@ -974,7 +971,7 @@ def application():
         elif request_type in ('getmap', 'getvsec', 'getlsec') and request_version in ('1.1.1', '1.3.0', ''):
             return_data, mime_type = server.produce_plot(query, request_type)
         else:
-            logging.debug("Request type '%s' is not valid.", request)
+            LOGGER.debug("Request type '%s' is not valid.", request)
             raise RuntimeError("Request type is not valid.")
 
         res = make_response(return_data, 200)
@@ -991,7 +988,7 @@ def application():
             return render_template("/index.html")
 
         # communicate request errors back to client user
-        logging.error("Unexpected error: %s: %s\nTraceback:\n%s",
+        LOGGER.error("Unexpected error: %s: %s\nTraceback:\n%s",
                       type(ex), ex, traceback.format_exc())
         error_message = "{}: {}\n".format(type(ex), ex)
         response_headers = [('Content-type', 'text/plain'), ('Content-Length', str(len(error_message)))]

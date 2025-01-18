@@ -29,12 +29,11 @@
 from abc import ABCMeta, abstractmethod
 import itertools
 import os
-import logging
 import netCDF4
 import numpy as np
 import pint
 
-from mslib.utils import netCDF4tools
+from mslib.utils import netCDF4tools, LOGGER
 from mslib.utils.units import units
 
 
@@ -230,7 +229,7 @@ class DefaultDataAccess(NWPDataAccess):
                 self.setup()
                 return self._determine_filename(variable, vartype, init_time, valid_time, reload=False)
             else:
-                logging.error("Could not identify filename. %s %s %s %s %s %s",
+                LOGGER.error("Could not identify filename. %s %s %s %s %s %s",
                               variable, vartype, init_time, valid_time, type(ex), ex)
                 raise ValueError(f"Variable '{variable}' not available for type '{vartype}', "
                                  f"init_time '{init_time}', and valid_time '{valid_time}'")
@@ -283,18 +282,18 @@ class DefaultDataAccess(NWPDataAccess):
                     if (ncvar.dimensions[0] != time_name or
                             ncvar.dimensions[-2] != lat_name or
                             ncvar.dimensions[-1] != lon_name):
-                        logging.error("Skipping variable '%s' in file '%s': Incorrect order of dimensions",
+                        LOGGER.error("Skipping variable '%s' in file '%s': Incorrect order of dimensions",
                                       ncvarname, filename)
                         continue
                     if not hasattr(ncvar, "units"):
-                        logging.error("Skipping variable '%s' in file '%s': No units attribute",
+                        LOGGER.error("Skipping variable '%s' in file '%s': No units attribute",
                                       ncvarname, filename)
                         continue
                     if ncvar.standard_name != "time":
                         try:
                             units(ncvar.units)
                         except (AttributeError, ValueError, pint.UndefinedUnitError, pint.DefinitionSyntaxError):
-                            logging.error("Skipping variable '%s' in file '%s': unparsable units attribute '%s'",
+                            LOGGER.error("Skipping variable '%s' in file '%s': unparsable units attribute '%s'",
                                           ncvarname, filename, ncvar.units)
                             continue
                     if len(ncvar.shape) == 4 and vert_name in ncvar.dimensions:
@@ -310,22 +309,22 @@ class DefaultDataAccess(NWPDataAccess):
         }
 
     def _add_to_filetree(self, filename, content):
-        logging.info("File '%s' identified as '%s' type", filename, content["vert_type"])
-        logging.info("Found init time '%s', %s valid_times and %s standard_names",
+        LOGGER.info("File '%s' identified as '%s' type", filename, content["vert_type"])
+        LOGGER.info("Found init time '%s', %s valid_times and %s standard_names",
                      content["init_time"], len(content["valid_times"]), len(content["standard_names"]))
         if len(content["valid_times"]) == 0 or len(content["standard_names"]) == 0:
-            logging.error(
+            LOGGER.error(
                 "Something is wrong with this file... valid_times='%s' standard_names='%s'",
                 content["valid_times"], content["standard_names"])
         else:
-            logging.debug("valid_times='%s' standard_names='%s'",
+            LOGGER.debug("valid_times='%s' standard_names='%s'",
                           content["valid_times"], content["standard_names"])
         leaf = self._filetree.setdefault(content["vert_type"], {}).setdefault(content["init_time"], {})
         for standard_name in content["standard_names"]:
             var_leaf = leaf.setdefault(standard_name, {})
             for valid_time in content["valid_times"]:
                 if valid_time in var_leaf:
-                    logging.warning(
+                    LOGGER.warning(
                         "some data was found twice! vartype='%s' init_time='%s' standard_name='%s' "
                         "valid_time='%s' first_file='%s' second_file='%s'",
                         content["vert_type"], content["init_time"], standard_name,
@@ -337,7 +336,7 @@ class DefaultDataAccess(NWPDataAccess):
         # Get a list of the available data files.
         self._available_files = [
             _filename for _filename in sorted(os.listdir(self._root_path)) if self._domain_id in _filename]
-        logging.info("Files identified for domain '%s': %s",
+        LOGGER.info("Files identified for domain '%s': %s",
                      self._domain_id, self._available_files)
 
         for filename in list(self._file_cache):
@@ -351,7 +350,7 @@ class DefaultDataAccess(NWPDataAccess):
         for filename in self._available_files:
             mtime = os.path.getmtime(os.path.join(self._root_path, filename))
             if (filename in self._file_cache) and (mtime == self._file_cache[filename][0]):
-                logging.info("Using cached candidate '%s'", filename)
+                LOGGER.info("Using cached candidate '%s'", filename)
                 content = self._file_cache[filename][1]
                 if content["vert_type"] != "sfc":
                     if content["vert_type"] not in self._elevations:
@@ -361,16 +360,16 @@ class DefaultDataAccess(NWPDataAccess):
                         (not np.allclose(
                          self._elevations[content["vert_type"]]["levels"],
                          content["elevations"]["levels"]))):
-                        logging.error("Skipping file '%s' due to elevation mismatch", filename)
+                        LOGGER.error("Skipping file '%s' due to elevation mismatch", filename)
                         continue
             else:
                 if filename in self._file_cache:
                     del self._file_cache[filename]
-                logging.info("Opening candidate '%s'", filename)
+                LOGGER.info("Opening candidate '%s'", filename)
                 try:
                     content = self._parse_file(filename)
                 except IOError as ex:
-                    logging.error("Skipping file '%s' (%s: %s)", filename, type(ex), ex)
+                    LOGGER.error("Skipping file '%s' (%s: %s)", filename, type(ex), ex)
                     continue
                 self._file_cache[filename] = (mtime, content)
                 if content["vert_type"] not in self._elevations:
@@ -393,7 +392,7 @@ class DefaultDataAccess(NWPDataAccess):
         try:
             return sorted(self._filetree[vartype][init_time][variable])
         except KeyError as ex:
-            logging.error("Could not find times! %s %s", type(ex), ex)
+            LOGGER.error("Could not find times! %s %s", type(ex), ex)
             return []
 
     def get_elevations(self, vert_type):
@@ -457,7 +456,7 @@ class WatchModificationDataAccess(DefaultDataAccess):
                 self.setup()
                 self._determine_filename(self, variable, vartype, init_time, valid_time, reload=False)
             else:
-                logging.error("Could not identify filename. %s %s %s %s %s %s",
+                LOGGER.error("Could not identify filename. %s %s %s %s %s %s",
                               variable, vartype, init_time, valid_time, type(ex), ex)
                 raise ValueError(f"variable type {vartype} not available for variable {variable}")
 

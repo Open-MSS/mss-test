@@ -30,7 +30,6 @@
 
 import PIL.Image
 import io
-import logging
 import numpy as np
 from abc import abstractmethod
 from xml.dom.minidom import getDOMImplementation
@@ -161,7 +160,7 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
                 data[dataitem] = convert_to(data[dataitem], origunit, dataunit)
                 self.data_units[dataitem] = dataunit
             else:
-                logging.debug("Please add units to plot variables")
+                mpl_logger.debug("Please add units to plot variables")
 
         # Copy parameters to properties.
         self.data = data
@@ -207,12 +206,12 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
         # ===============================================
         if mime_type == "image/png":
 
-            logging.debug("creating figure..")
+            mpl_logger.debug("creating figure..")
             dpi = 80
             figsize = (figsize[0] / dpi), (figsize[1] / dpi)
             facecolor = "white"
             self.fig = mpl.figure.Figure(figsize=figsize, dpi=dpi, facecolor=facecolor)
-            logging.debug("\twith frame and legends" if not noframe else
+            mpl_logger.debug("\twith frame and legends" if not noframe else
                           "\twithout frame")
             if noframe:
                 self.ax = self.fig.add_axes([0.0, 0.0, 1.0, 1.0])
@@ -235,7 +234,7 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
             canvas.print_png(output)
 
             if show:
-                logging.debug("saving figure to mpl_vsec.png ..")
+                mpl_logger.debug("saving figure to mpl_vsec.png ..")
                 canvas.print_png("mpl_vsec.png")
 
             # Convert the image to an 8bit palette image with a significantly
@@ -246,7 +245,7 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
             # requested, the figure face colour is stored as the "transparent"
             # colour in the image. This works in most cases, but might lead to
             # visible artefacts in some cases.
-            logging.debug("converting image to indexed palette.")
+            mpl_logger.debug("converting image to indexed palette.")
             # Read the above stored png into a PIL image and create an adaptive
             # colour palette.
             output.seek(0)  # necessary for PIL.Image.open()
@@ -254,7 +253,7 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
                 mode="RGB").convert("P", palette=PIL.Image.Palette.ADAPTIVE)
             output = io.BytesIO()
             if not transparent:
-                logging.debug("saving figure as non-transparent PNG.")
+                mpl_logger.debug("saving figure as non-transparent PNG.")
                 palette_img.save(output, format="PNG")  # using optimize=True doesn't change much
             else:
                 # If the image has a transparent background, we need to find the
@@ -274,11 +273,11 @@ class AbstractVerticalSectionStyle(mss_2D_sections.Abstract2DSectionStyle):
                     facecolor_rgb[i] = int(facecolor_rgb[i] * 255)
                 facecolor_index = lut.index(tuple(facecolor_rgb))
 
-                logging.debug("saving figure as transparent PNG with transparency index %i.",
+                mpl_logger.debug("saving figure as transparent PNG with transparency index %i.",
                               facecolor_index)
                 palette_img.save(output, format="PNG", transparency=facecolor_index)
 
-            logging.debug("returning figure..")
+            mpl_logger.debug("returning figure..")
             return output.getvalue()
 
         # Code for generating an XML document with the data values in ASCII format.

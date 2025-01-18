@@ -30,7 +30,6 @@
 
 
 import io
-import logging
 from abc import abstractmethod
 import mswms_settings
 
@@ -46,7 +45,7 @@ from mslib.utils.get_projection_params import get_projection_params
 from mslib.utils.units import convert_to
 from mslib.mswms.utils import make_cbar_labels_readable
 from mslib.utils.loggerdef import configure_mpl_logger
-
+from mslib.utils import LOGGER
 
 BASEMAP_CACHE = {}
 BASEMAP_REQUESTS = []
@@ -239,7 +238,7 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
         if crs is not None:
             proj_params, bbox_units = [get_projection_params(crs)[_x] for _x in ("basemap", "bbox")]
 
-        logging.debug("plotting data..")
+        LOGGER.debug("plotting data..")
 
         # Check if required data is available.
         self.data_units = self.driver.data_units.copy()
@@ -251,7 +250,7 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
                 data[dataitem] = convert_to(data[dataitem], origunit, dataunit)
                 self.data_units[dataitem] = dataunit
             else:
-                logging.debug("Please add units to plot variables")
+                LOGGER.debug("Please add units to plot variables")
 
         # Copy parameters to properties.
         self.data = data
@@ -266,15 +265,15 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
         self.crs = crs
 
         # Derive additional data fields and make the plot.
-        logging.debug("preparing additional data fields..")
+        LOGGER.debug("preparing additional data fields..")
         self._prepare_datafields()
 
-        logging.debug("creating figure..")
+        LOGGER.debug("creating figure..")
         dpi = 80
         figsize = (figsize[0] / dpi), (figsize[1] / dpi)
         facecolor = "white"
         fig = mpl.figure.Figure(figsize=figsize, dpi=dpi, facecolor=facecolor)
-        logging.debug("\twith frame and legends" if not noframe else
+        LOGGER.debug("\twith frame and legends" if not noframe else
                       "\twithout frame")
         if noframe:
             ax = fig.add_axes([0.0, 0.0, 1.0, 1.0])
@@ -329,7 +328,7 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
             bm = basemap.Basemap(resolution=None, **bm_params)
             (bm.resolution, bm.coastsegs, bm.coastpolygontypes, bm.coastpolygons,
              bm.coastsegs, bm.landpolygons, bm.lakepolygons, bm.cntrysegs) = BASEMAP_CACHE[key]
-            logging.debug("Loaded '%s' from basemap cache", key)
+            LOGGER.debug("Loaded '%s' from basemap cache", key)
         else:
             bm = basemap.Basemap(resolution='l', **bm_params)
             # read in countries manually, as those are loaded only on demand
@@ -355,7 +354,7 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
             try:
                 bm.drawcoastlines(color='0.25')
             except ValueError as ex:
-                logging.error("Error in basemap/matplotlib call of drawcoastlines: %s", ex)
+                LOGGER.error("Error in basemap/matplotlib call of drawcoastlines: %s", ex)
             bm.drawcountries(color='0.5')
             bm.drawmapboundary(fill_color='white')
 
@@ -386,7 +385,7 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
         canvas.print_png(output)
 
         if show:
-            logging.debug("saving figure to mpl_hsec.png ..")
+            LOGGER.debug("saving figure to mpl_hsec.png ..")
             canvas.print_png("mpl_hsec.png")
 
         # Convert the image to an 8bit palette image with a significantly
@@ -397,14 +396,14 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
         # requested, the figure face colour is stored as the "transparent"
         # colour in the image. This works in most cases, but might lead to
         # visible artefacts in some cases.
-        logging.debug("converting image to indexed palette.")
+        LOGGER.debug("converting image to indexed palette.")
         # Read the above stored png into a PIL image and create an adaptive
         # colour palette.
         output.seek(0)  # necessary for PIL.Image.open()
         palette_img = PIL.Image.open(output).convert(mode="RGB").convert("P", palette=PIL.Image.Palette.ADAPTIVE)
         output = io.BytesIO()
         if not transparent:
-            logging.debug("saving figure as non-transparent PNG.")
+            LOGGER.debug("saving figure as non-transparent PNG.")
             palette_img.save(output, format="PNG")  # using optimize=True doesn't change much
         else:
             # If the image has a transparent background, we need to find the
@@ -424,13 +423,13 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
                 facecolor_rgb[i] = int(facecolor_rgb[i] * 255)
             try:
                 facecolor_index = lut.index(tuple(facecolor_rgb))
-                logging.debug("saving figure as transparent PNG with transparency index %s.", facecolor_index)
+                LOGGER.debug("saving figure as transparent PNG with transparency index %s.", facecolor_index)
                 palette_img.save(output, format="PNG", transparency=facecolor_index)
             except ValueError:
-                logging.debug("transparency requested but not possible, saving non-transparent instead")
+                LOGGER.debug("transparency requested but not possible, saving non-transparent instead")
                 palette_img.save(output, format="PNG")
 
-        logging.debug("returning figure..")
+        LOGGER.debug("returning figure..")
         return output.getvalue()
 
     def shift_data(self):
@@ -451,7 +450,7 @@ class MPLBasemapHorizontalSectionStyle(AbstractHorizontalSectionStyle):
         axis = self.bm.ax.axis()
         ulcrnrlon, ulcrnrlat = self.bm(axis[0], axis[3], inverse=True)
         left_longitude = min(self.bm.llcrnrlon, ulcrnrlon)
-        logging.debug("shifting data grid to leftmost longitude in map %2.f..", left_longitude)
+        LOGGER.debug("shifting data grid to leftmost longitude in map %2.f..", left_longitude)
 
         # Add a column of nans for non-global data to keep it from being
         # interpolated over long gaps in cylindrical

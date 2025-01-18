@@ -34,7 +34,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from mslib.utils import netCDF4tools
+from mslib.utils import netCDF4tools, LOGGER
 import mslib.utils.coordinate as coordinate
 from mslib.utils.units import convert_to, units
 
@@ -89,7 +89,7 @@ class MSSPlotDriver(metaclass=ABCMeta):
           loads dimension data if required.
         """
         if len(self.plot_object.required_datafields) == 0:
-            logging.debug("no datasets required.")
+            LOGGER.debug("no datasets required.")
             self.dataset = None
             self.filenames = []
             self.init_time = None
@@ -104,23 +104,23 @@ class MSSPlotDriver(metaclass=ABCMeta):
             return
 
         if self.uses_inittime_dimension():
-            logging.debug("\trequested initialisation time %s", init_time)
+            LOGGER.debug("\trequested initialisation time %s", init_time)
             if fc_time < init_time:
                 msg = "Forecast valid time cannot be earlier than " \
                       "initialisation time."
-                logging.error(msg)
+                LOGGER.error(msg)
                 raise ValueError(msg)
         self.fc_time = fc_time
-        logging.debug("\trequested forecast valid time %s", fc_time)
+        LOGGER.debug("\trequested forecast valid time %s", fc_time)
 
         # Check if a dataset is open and if it contains the requested times.
         # (a dataset will only be open if the used layer has not changed,
         # i.e. the required variables have not changed as well).
         if (self.dataset is not None) and (self.init_time == init_time) and (fc_time in self.times):
-            logging.debug("\tinit time correct and forecast valid time contained (%s).", fc_time)
+            LOGGER.debug("\tinit time correct and forecast valid time contained (%s).", fc_time)
             if not self.data_access.is_reload_required(self.filenames):
                 return
-            logging.debug("need to re-open input files.")
+            LOGGER.debug("need to re-open input files.")
             self.dataset.close()
             self.dataset = None
 
@@ -134,7 +134,7 @@ class MSSPlotDriver(metaclass=ABCMeta):
                 var, vartype, init_time, fc_time, fullpath=True)
             if filename not in self.filenames:
                 self.filenames.append(filename)
-            logging.debug("\tvariable '%s' requires input file '%s'",
+            LOGGER.debug("\tvariable '%s' requires input file '%s'",
                           var, os.path.basename(filename))
 
         if len(self.filenames) == 0:
@@ -144,7 +144,7 @@ class MSSPlotDriver(metaclass=ABCMeta):
         self.init_time = init_time
 
         # Open NetCDF files as one dataset with common dimensions.
-        logging.debug("opening datasets.")
+        LOGGER.debug("opening datasets.")
         dsKWargs = self.data_access.mfDatasetArgs()
         dataset = netCDF4tools.MFDatasetCommonDims(self.filenames, **dsKWargs)
 
@@ -161,7 +161,7 @@ class MSSPlotDriver(metaclass=ABCMeta):
 
         if fc_time not in times:
             msg = f"Forecast valid time '{fc_time}' is not available."
-            logging.error(msg)
+            LOGGER.error(msg)
             dataset.close()
             raise ValueError(msg)
 
@@ -169,7 +169,7 @@ class MSSPlotDriver(metaclass=ABCMeta):
         try:
             lat_data, lon_data, lat_order = netCDF4tools.get_latlon_data(dataset)
         except Exception as ex:
-            logging.error("ERROR: %s %s", type(ex), ex)
+            LOGGER.error("ERROR: %s %s", type(ex), ex)
             dataset.close()
             raise
 
@@ -202,7 +202,7 @@ class MSSPlotDriver(metaclass=ABCMeta):
         self.data_units = {}
         for df_type, df_name, _ in self.plot_object.required_datafields:
             varname, var = netCDF4tools.identify_variable(self.dataset, df_name, check=True)
-            logging.debug("\tidentified variable <%s> for field <%s>", varname, df_name)
+            LOGGER.debug("\tidentified variable <%s> for field <%s>", varname, df_name)
             self.data_vars[df_name] = var
             self.data_units[df_name] = getattr(var, "units", None)
 
@@ -233,8 +233,8 @@ class MSSPlotDriver(metaclass=ABCMeta):
         Derived methods need to call the super method before all other
         statements.
         """
-        logging.debug("using plot object '%s'", plot_object.name)
-        logging.debug("\tfigure size %s in pixels", figsize)
+        LOGGER.debug("using plot object '%s'", plot_object.name)
+        LOGGER.debug("\tfigure size %s in pixels", figsize)
 
         # If the plot object has been changed, the dataset needs to be reloaded
         # (the required variables could have changed).
@@ -420,7 +420,7 @@ class VerticalSectionDriver(MSSPlotDriver):
                                    vsec_path_connection='linear'):
         """
         """
-        logging.debug("computing %i interpolation points, connection: %s",
+        LOGGER.debug("computing %i interpolation points, connection: %s",
                       vsec_numpoints, vsec_path_connection)
         self.lats, self.lons = coordinate.path_points(
             [_x[0] for _x in vsec_path],
@@ -450,13 +450,13 @@ class VerticalSectionDriver(MSSPlotDriver):
         data = {}
 
         timestep = self.times.searchsorted(self.fc_time)
-        logging.debug("loading data for time step %s (%s)", timestep, self.fc_time)
+        LOGGER.debug("loading data for time step %s (%s)", timestep, self.fc_time)
 
         # Determine the westmost longitude in the cross-section path. Subtract
         # one gridbox size to obtain "left_longitude".
         dlon = self.lon_data[1] - self.lon_data[0]
         left_longitude = np.unwrap(self.lons, period=360).min() - dlon
-        logging.debug("shifting data grid to gridpoint west of westmost "
+        LOGGER.debug("shifting data grid to gridpoint west of westmost "
                       "longitude in path: %.2f (path %.2f).",
                       left_longitude, self.lons.min())
 
@@ -479,15 +479,15 @@ class VerticalSectionDriver(MSSPlotDriver):
                 var_data = var[timestep, ::-self.vert_order, ::self.lat_order, :]
             else:
                 var_data = var[:][timestep, np.newaxis, ::self.lat_order, :]
-            logging.debug("\tLoaded %.2f Mbytes from data field <%s> at timestep %s.",
+            LOGGER.debug("\tLoaded %.2f Mbytes from data field <%s> at timestep %s.",
                           var_data.nbytes / 1048576., name, timestep)
-            logging.debug("\tVertical dimension direction is %s.",
+            LOGGER.debug("\tVertical dimension direction is %s.",
                           "up" if self.vert_order == 1 else "down")
-            logging.debug("\tInterpolating to cross-section path.")
+            LOGGER.debug("\tInterpolating to cross-section path.")
             # Re-arange longitude dimension in the data field.
             var_data = var_data[:, :, lon_indices]
             if jump:
-                logging.debug("\tsetting jump data to NaN at %s", jump)
+                LOGGER.debug("\tsetting jump data to NaN at %s", jump)
                 var_data = var_data.copy()
                 var_data[:, :, jump] = np.nan
             data[name] = coordinate.interpolate_vertsec(var_data, self.lat_data, lon_data, self.lats, lons)
@@ -509,7 +509,7 @@ class VerticalSectionDriver(MSSPlotDriver):
         """
         # Determine the leftmost longitude in the plot.
         left_longitude = self.lons.min()
-        logging.debug("shifting data grid to leftmost longitude in path "
+        LOGGER.debug("shifting data grid to leftmost longitude in path "
                       "(%.2f)..", left_longitude)
 
         # Shift the longitude field such that the data is in the range
@@ -534,8 +534,8 @@ class VerticalSectionDriver(MSSPlotDriver):
         data = self._load_interpolate_timestep()
 
         d2 = datetime.now()
-        logging.debug("Loaded and interpolated data (required time %s).", d2 - d1)
-        logging.debug("Plotting interpolated curtain.")
+        LOGGER.debug("Loaded and interpolated data (required time %s).", d2 - d1)
+        LOGGER.debug("Plotting interpolated curtain.")
 
         if len(self.lat_data) > 1 and len(self.lon_data) > 1:
             resolution = (self.lon_data[1] - self.lon_data[0],
@@ -565,7 +565,7 @@ class VerticalSectionDriver(MSSPlotDriver):
         del data
 
         d3 = datetime.now()
-        logging.debug("Finished plotting (required time %s; total "
+        LOGGER.debug("Finished plotting (required time %s; total "
                       "time %s).\n", d3 - d2, d3 - d1)
 
         return image
@@ -632,7 +632,7 @@ class HorizontalSectionDriver(MSSPlotDriver):
             if abs(self.vert_data[level] - self.level) > 1e-3 * np.abs(np.diff(self.vert_data).mean()):
                 raise ValueError("Requested elevation not available.")
             self.actual_level = self.vert_data[level]
-        logging.debug("loading data for time step %s (%s), level index %s (level %s)",
+        LOGGER.debug("loading data for time step %s (%s), level index %s (level %s)",
                       timestep, self.fc_time, level, self.actual_level)
         for name, var in self.data_vars.items():
             if level is None or len(var.shape) == 3:
@@ -641,7 +641,7 @@ class HorizontalSectionDriver(MSSPlotDriver):
             else:
                 # 3D fields: time, level, lat, lon.
                 var_data = var[timestep, level, ::self.lat_order, :]
-            logging.debug("\tLoaded %.2f Mbytes from data field <%s>.",
+            LOGGER.debug("\tLoaded %.2f Mbytes from data field <%s>.",
                           var_data.nbytes / 1048576., name)
             data[name] = var_data
             # Free memory.
@@ -661,8 +661,8 @@ class HorizontalSectionDriver(MSSPlotDriver):
         data = self._load_timestep()
 
         d2 = datetime.now()
-        logging.debug("Loaded data (required time %s).", (d2 - d1))
-        logging.debug("Plotting horizontal section.")
+        LOGGER.debug("Loaded data (required time %s).", (d2 - d1))
+        LOGGER.debug("Plotting horizontal section.")
 
         if len(self.lat_data) > 1:
             resolution = (self.lat_data[1] - self.lat_data[0])
@@ -691,7 +691,7 @@ class HorizontalSectionDriver(MSSPlotDriver):
         del data
 
         d3 = datetime.now()
-        logging.debug("Finished plotting (required time %s; total "
+        LOGGER.debug("Finished plotting (required time %s; total "
                       "time %s).\n", d3 - d2, d3 - d1)
 
         return image
@@ -741,7 +741,7 @@ class LinearSectionDriver(VerticalSectionDriver):
     def _set_linear_section_path(self, lsec_path, lsec_numpoints=101, lsec_path_connection='linear'):
         """
         """
-        logging.debug("computing %i interpolation points, connection: %s",
+        LOGGER.debug("computing %i interpolation points, connection: %s",
                       lsec_numpoints, lsec_path_connection)
         self.lats, self.lons, self.alts = coordinate.path_points(
             [_x[0] for _x in lsec_path],
@@ -773,13 +773,13 @@ class LinearSectionDriver(VerticalSectionDriver):
         data = {}
 
         timestep = self.times.searchsorted(self.fc_time)
-        logging.debug("loading data for time step %s (%s)", timestep, self.fc_time)
+        LOGGER.debug("loading data for time step %s (%s)", timestep, self.fc_time)
 
         # Determine the westmost longitude in the cross-section path. Subtract
         # one gridbox size to obtain "left_longitude".
         dlon = self.lon_data[1] - self.lon_data[0]
         left_longitude = np.unwrap(self.lons, period=360).min() - dlon
-        logging.debug("shifting data grid to gridpoint west of westmost "
+        LOGGER.debug("shifting data grid to gridpoint west of westmost "
                       "longitude in path: %.2f (path %.2f).",
                       left_longitude, self.lons.min())
 
@@ -822,15 +822,15 @@ class LinearSectionDriver(VerticalSectionDriver):
                 var_data = var[:][timestep, ::-self.vert_order, ::self.lat_order, :]
             else:
                 var_data = var[:][timestep, np.newaxis, ::self.lat_order, :]
-            logging.debug("\tLoaded %.2f Mbytes from data field <%s> at timestep %s.",
+            LOGGER.debug("\tLoaded %.2f Mbytes from data field <%s> at timestep %s.",
                           var_data.nbytes / 1048576., name, timestep)
-            logging.debug("\tVertical dimension direction is %s.",
+            LOGGER.debug("\tVertical dimension direction is %s.",
                           "up" if self.vert_order == 1 else "down")
-            logging.debug("\tInterpolating to cross-section path.")
+            LOGGER.debug("\tInterpolating to cross-section path.")
             # Re-arange longitude dimension in the data field.
             var_data = var_data[:, :, lon_indices]
             if jump:
-                logging.debug("\tsetting jump data to NaN at %s", jump)
+                LOGGER.debug("\tsetting jump data to NaN at %s", jump)
                 var_data = var_data.copy()
                 var_data[:, :, jump] = np.nan
 
@@ -892,7 +892,7 @@ class LinearSectionDriver(VerticalSectionDriver):
         del data
 
         d3 = datetime.now()
-        logging.debug("Finished plotting (required time %s; total "
+        LOGGER.debug("Finished plotting (required time %s; total "
                       "time %s).\n", d3 - d2, d3 - d1)
 
         return image
